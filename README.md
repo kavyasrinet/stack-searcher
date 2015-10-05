@@ -24,6 +24,7 @@ Size: ~25GB
 Location: 
 
 Full dataset:  metal.lti:/usr2/diwang/stack/stackexchange
+
 Sample dataset: https://github.com/Digo/stack-searcher/blob/master/dataset_sample/
 
 Next Steps
