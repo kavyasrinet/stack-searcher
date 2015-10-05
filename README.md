@@ -8,11 +8,11 @@ Retrieving and predicting relevant questions given an input question
 Challenge and Motivation
 ---
 * Stack exchange questions are often **long and complex**, thus hard to search for similar ones
-  * Dynamic **selection and expansion** of keywords for question retrieval 
+  * Dynamic keywords **selection and expansion** for question retrieval 
     * new search results quality estimation algorithm
   * Utilize question title, description, category,  date, previous answer votes, and other metadata to improve search results  
 * Users could describe same symptom in **different words**
-  * new relevant mode based on word embedding  
+  * new relevant model based on word embedding  
 
 Dataset
 ----
@@ -32,3 +32,5 @@ Next Steps
 * Extract and format data tuples (input question, [relevant questions]) 
 * Split data tuples into train, validate, test datasets
 * Search evaluation MAP, MRR, Recall@10 
+* Develope and evaluate new dynamic keywords selection and expansion methods
+* Develope and evaluate new revelant function based on word embedding
