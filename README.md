@@ -32,5 +32,5 @@ Next Steps
 * Extract and format data tuples (input question, [relevant questions]) 
 * Split data tuples into train, validate, test datasets
 * Search evaluation MAP, MRR, Recall@10 
-* Develope and evaluate new dynamic keywords selection and expansion methods
-* Develope and evaluate new revelant function based on word embedding
+* Develop and evaluate new dynamic keywords selection and expansion methods
+* Develop and evaluate new relevant function based on word embedding
