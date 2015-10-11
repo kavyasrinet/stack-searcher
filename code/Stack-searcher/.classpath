@@ -2,9 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
-	<classpathentry kind="lib" path="/Users/kavyasrinet/Downloads/apache-commons.jar"/>
-	<classpathentry kind="lib" path="/Users/kavyasrinet/Downloads/exist-dependency-ws-commons-util-1.0.2.jar"/>
-	<classpathentry kind="lib" path="/Users/kavyasrinet/Downloads/lucene-queryparser-4.2.0.jar"/>
-	<classpathentry kind="lib" path="/Users/kavyasrinet/Downloads/org-apache-commons-codec.jar"/>
+	<classpathentry kind="lib" path="jars/lucene-queryparser-4.2.0.jar"/>
+	<classpathentry kind="lib" path="jars/org-apache-commons-codec.jar"/>
+	<classpathentry kind="lib" path="jars/ws-commons-util.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
