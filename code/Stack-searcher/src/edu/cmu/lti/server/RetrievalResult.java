@@ -32,9 +32,15 @@ public class RetrievalResult implements Comparable<RetrievalResult> {
     this.queryString = queryString;
   }
 
+  public void setUrl(String urlString){
+	  this.url = urlString;
+  }
+  
   public String dataSource;
 
   private String docID;
+  
+  private String url;
 
   private double score;
 
@@ -60,12 +66,13 @@ public class RetrievalResult implements Comparable<RetrievalResult> {
    * @param queryString
    *          query string that was used to find result
    */
-  public RetrievalResult(String docID, double score, String text, int rank, String queryString) {
+  public RetrievalResult(String docID, double score, String text, int rank, String queryString, String url) {
     this.docID = docID;
     this.score = score;
     this.text = text;
     this.rank = rank;
     this.queryString = queryString;
+    this.url = url;
   }
   
   public RetrievalResult() {
@@ -98,6 +105,10 @@ public class RetrievalResult implements Comparable<RetrievalResult> {
     return this.queryString;
   }
 
+  public String getUrl(){
+	  return this.url;
+  }
+  
   /**
    * Get document ID
    * 
