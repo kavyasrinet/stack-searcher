@@ -28,19 +28,36 @@ import java.io.File;
 
 import org.apache.lucene.queryparser.flexible.core.util.StringUtils;
 
+import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.search.BingSearchAgent;
 import edu.cmu.lti.search.RetrievalResult;
 /**
  * @author Kavya Srinet.
  */
 public class QuestionRetreivalBaseline {
-    private static final int ArrayList = 0;
-    private static final int String = 0;
+    
     public static void main(String[] args) throws URISyntaxException, IOException {
     	QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
-    	HashMap<String, ArrayList<String>> map = qrb.crawlBing(10);
+    	Evaluate evaluator = new Evaluate();
+    	
+    	HashMap<String, ArrayList<String>> predicted_results = qrb.crawlBing(10);
+    	
+    	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
+    	System.out.println("mrr Score = " + evaluator.getMrrScore(predicted_results));
+       	System.out.println("Recall Score = " + evaluator.getRecall(predicted_results));
+    	System.out.println("P@1 Score = " + evaluator.getPAtK(predicted_results,1));
+    	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
     }
     
+    private  String generateQuery(String line)
+    {
+    	String[] parts = line.split("\t");
+      	
+        String title = parts[1].trim();
+        title = title.replaceAll("\\&", ""); 
+        String body = parts[2].trim();
+        return title;
+    }
     /*
      * This function gets the first 100 lines of the Posts.xml file and 
      * crawls the web using BingSearchAPI and returns back a hashmap that contains the PostId
@@ -55,41 +72,36 @@ public class QuestionRetreivalBaseline {
         BingSearchAgent bsa = new BingSearchAgent();
         bsa.initialize(accountKey);
         bsa.setResultSetSize(resultSetSize);
-        String qid ="";
-        String question="";
-        String ln2 = null;
+        String qid ;
+
         int j=0;
         
         HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
-        while((line=reader.readLine())!=null && j<=100){
-        	
-        	ArrayList<RetrievalResult> results = new ArrayList<>();
-          String[] parts = line.split("\t");
-          	qid = parts[0];
-            String title = parts[1].trim();
-            title = title.replaceAll("\\&", ""); 
-            String body = parts[2].trim();
-            results.addAll(bsa.retrieveDocuments(qid, "site:travel.stackexchange.com "+title));
-            ArrayList<String> list = new ArrayList<String>();
-            for(int i=0;i<results.size();i++){
-            	RetrievalResult r = results.get(i);
-            	String url = r.getUrl();
-            	String[] p = url.split("/");
-            	if(p[3].equals("questions"))
-            		list.add(p[4]);  	
-            	else
-            		continue;
-            }
-            if(!map.containsKey(qid)){
-            	map.put(qid, list);
-            }
-            j++;
-        }
         
-        
-          return map;
-
-        
-  
+        while((line=reader.readLine())!=null && (j++)<=100){
+        	qid = line.split("\t")[0];
+        	if(!map.containsKey(qid))
+        	{
+	        	ArrayList<RetrievalResult> results = new ArrayList<>();
+	        	String query = generateQuery(line);
+	        	
+	            results.addAll(bsa.retrieveDocuments(qid, "site:travel.stackexchange.com "+query));
+	            
+	            ArrayList<String> list = new ArrayList<String>();
+	            
+	            for(int i=0;i<results.size();i++){
+	            	RetrievalResult r = results.get(i);
+	            	String url = r.getUrl();
+	            	String[] p = url.split("/");
+	            	if(p[3].equals("questions"))
+	            		list.add(p[4]);  	
+	            	else
+	            		continue;
+	            }
+	            	map.put(qid, list);
+	            }
+        }        
+    	reader.close();
+    	return map;
     }
 }
