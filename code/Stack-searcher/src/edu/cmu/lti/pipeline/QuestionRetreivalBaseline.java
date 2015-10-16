@@ -68,7 +68,7 @@ public class QuestionRetreivalBaseline {
        BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/question_queries.txt")));
 
         String line = null;
-        String accountKey = "74mM12fgn5KdVok+J7bKHkPybKZjBHh8asx+91JkwdI";
+        String accountKey = "zRE0QHViXZPkBkcdHMi6Tju8zxFFe8lNbAFUx4z/FXk";
         BingSearchAgent bsa = new BingSearchAgent();
         bsa.initialize(accountKey);
         bsa.setResultSetSize(resultSetSize);
@@ -77,30 +77,44 @@ public class QuestionRetreivalBaseline {
         int j=0;
         
         HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
-        
-        while((line=reader.readLine())!=null && (j++)<=100){
-        	qid = line.split("\t")[0];
-        	if(!map.containsKey(qid))
-        	{
-	        	ArrayList<RetrievalResult> results = new ArrayList<>();
-	        	String query = generateQuery(line);
-	        	
-	            results.addAll(bsa.retrieveDocuments(qid, "site:travel.stackexchange.com "+query));
-	            
-	            ArrayList<String> list = new ArrayList<String>();
-	            
-	            for(int i=0;i<results.size();i++){
-	            	RetrievalResult r = results.get(i);
-	            	String url = r.getUrl();
-	            	String[] p = url.split("/");
-	            	if(p[3].equals("questions"))
-	            		list.add(p[4]);  	
-	            	else
-	            		continue;
-	            }
-	            	map.put(qid, list);
-	            }
-        }        
+        int k=0;
+        while((line=reader.readLine())!=null && k<=5000){
+        	if(j==k ){
+	        	qid = line.split("\t")[0];
+	        	if(!map.containsKey(qid))
+	        	{
+		        	ArrayList<RetrievalResult> results = new ArrayList<>();
+		        	String query = generateQuery(line);
+		        	
+		            results.addAll(bsa.retrieveDocuments(qid, "site:travel.stackexchange.com "+query));
+		            
+		            ArrayList<String> list = new ArrayList<String>();
+		            
+		            for(int i=0;i<results.size();i++){
+		            	RetrievalResult r = results.get(i);
+		            	String url = r.getUrl();
+		            	String[] p = url.split("/");
+		            	if(p.length >=5){
+		            	if(p[3].equals("questions"))
+		            		list.add(p[4]);  	
+		            	else{
+		            		list.add("");
+		            		continue;
+		            	}
+		            		
+		            	}
+		            	else
+		            		list.add("");
+		            }
+		            	map.put(qid, list);
+		            }
+	        	k= k+10;
+	        	System.out.println(k);
+        	}
+        	j = j+1;
+        	
+         
+        }
     	reader.close();
     	return map;
     }
