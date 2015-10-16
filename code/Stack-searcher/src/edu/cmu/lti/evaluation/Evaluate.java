@@ -78,13 +78,15 @@ public class Evaluate
 			{
 				if(resultID.matches("[0-9]+")) 	
 				{
-					if ((total++) > k)
+					if ((++total) > k)
 						break;
 					
 					if(goldSet.get(questionID).contains(resultID))
 						correct++;
 				}
 			}
+			if( k == 1 && correct > 0)
+				System.out.println(questionID);
 			
 			map = map + correct/k;
 		}
