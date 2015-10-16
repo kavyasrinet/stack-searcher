@@ -30,16 +30,22 @@ import org.apache.lucene.queryparser.flexible.core.util.StringUtils;
 
 import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.search.BingSearchAgent;
+import edu.cmu.lti.custom.ExtractKeyword;
 import edu.cmu.lti.search.RetrievalResult;
 /**
  * @author Kavya Srinet.
  */
 public class QuestionRetreivalBaseline {
-    
+	static HashSet<String> stopwords = new HashSet<String>();
     public static void main(String[] args) throws URISyntaxException, IOException {
     	QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	Evaluate evaluator = new Evaluate();
-    	
+    	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
+    	String line ="";
+    	while((line=reader.readLine())!=null){
+    		line = line.trim();
+    		stopwords.add(line);
+    	}
     	HashMap<String, ArrayList<String>> predicted_results = qrb.crawlBing(10);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
@@ -49,12 +55,14 @@ public class QuestionRetreivalBaseline {
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
     }
     
-    private  String generateQuery(String line)
+    private  String generateQuery(String line) throws IOException
     {
+    	ExtractKeyword e = new ExtractKeyword();
     	String[] parts = line.split("\t");
       	
         String title = parts[1].trim();
         title = title.replaceAll("\\&", ""); 
+        title = e.getKeywords(title, stopwords);
         String body = parts[2].trim();
         return title;
     }

@@ -60,6 +60,7 @@ public class RetrievalResult  {
     public String toString() {
         return "[" + docID + " " + url + "]" ; // \n " + text + "]";
     }
+    
     public String getText(){
         return text;
     }
