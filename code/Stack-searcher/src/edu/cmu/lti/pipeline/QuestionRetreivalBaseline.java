@@ -70,7 +70,7 @@ public class QuestionRetreivalBaseline {
        BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/question_queries.txt")));
 
         String line = null;
-        String accountKey = "74mM12fgn5KdVok+J7bKHkPybKZjBHh8asx+91JkwdI";
+        String accountKey = "zRE0QHViXZPkBkcdHMi6Tju8zxFFe8lNbAFUx4z/FXk";
         BingSearchAgent bsa = new BingSearchAgent();
         bsa.initialize(accountKey);
         bsa.setResultSetSize(resultSetSize);
@@ -79,21 +79,27 @@ public class QuestionRetreivalBaseline {
         int j=0;
         
         HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+
         
-        while((line=reader.readLine())!=null && (j++)<=100){
-        	qid = line.split("\t")[0];
-        	if(!map.containsKey(qid))
+        
+        while((line=reader.readLine())!=null && (j++<5000)){
+        	if(j%10 == 0)
         	{
-	        	ArrayList<RetrievalResult> results = new ArrayList<>();
-	        	String query = generateQuery(line);
-	        	
-	            results.addAll(bsa.retrieveDocuments(qid, "site:travel.stackexchange.com "+query));
-	            
-	            ArrayList list = getRelatedQuestions(results);
-	            
-            	map.put(qid, list);
-	            }
-        	System.out.println(j);
+	        	qid = line.split("\t")[0];
+	        	if(!map.containsKey(qid))
+	        	{
+		        	ArrayList<RetrievalResult> results = new ArrayList<>();
+		        	String query = generateQuery(line);
+		        	
+		            results.addAll(bsa.retrieveDocuments(qid, "site:travel.stackexchange.com "+query));
+		            
+		            ArrayList list = getRelatedQuestions(results);
+		            
+	            	map.put(qid, list);
+		            }
+	        	System.out.println(j);
+        	}
+
         }        
     	reader.close();
     	return map;
