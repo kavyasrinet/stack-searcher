@@ -58,6 +58,8 @@ public class QuestionRetreivalBaseline {
         String body = parts[2].trim();
         return title;
     }
+    
+
     /*
      * This function gets the first 100 lines of the Posts.xml file and 
      * crawls the web using BingSearchAPI and returns back a hashmap that contains the PostId
@@ -87,21 +89,31 @@ public class QuestionRetreivalBaseline {
 	        	
 	            results.addAll(bsa.retrieveDocuments(qid, "site:travel.stackexchange.com "+query));
 	            
-	            ArrayList<String> list = new ArrayList<String>();
+	            ArrayList list = getRelatedQuestions(results);
 	            
-	            for(int i=0;i<results.size();i++){
-	            	RetrievalResult r = results.get(i);
-	            	String url = r.getUrl();
-	            	String[] p = url.split("/");
-	            	if(p[3].equals("questions"))
-	            		list.add(p[4]);  	
-	            	else
-	            		continue;
+            	map.put(qid, list);
 	            }
-	            	map.put(qid, list);
-	            }
+        	System.out.println(j);
         }        
     	reader.close();
     	return map;
     }
+
+	private ArrayList getRelatedQuestions(ArrayList<RetrievalResult> results)
+	{
+        ArrayList<String> list = new ArrayList<String>();
+        
+        for(int i=0;i<results.size();i++){
+        	RetrievalResult r = results.get(i);
+        	String url = r.getUrl();
+        	if(url.matches("travel.stack_exchange.com"))
+        	{
+        		String[] p = url.split("/");
+        	if(p[3].equals("questions"))
+        		list.add(p[4]);  	
+            }
+        }
+        return list;
+	}
+
 }
