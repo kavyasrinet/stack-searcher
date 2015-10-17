@@ -1,32 +1,17 @@
 package edu.cmu.lti.pipeline;
 
-import java.awt.List;
+
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-
-import java.io.File;
-
-import org.apache.lucene.queryparser.flexible.core.util.StringUtils;
 
 import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.search.BingSearchAgent;
@@ -67,6 +52,23 @@ public class QuestionRetreivalBaseline {
         return title;
     }
     
+    public ArrayList<String> rerank_list(String qid, ArrayList<String> list) throws IOException
+    {   	
+    	PrintWriter writer = new PrintWriter("input_ids.txt", "UTF-8");
+    	writer.println(qid);
+    	for(String result : list) {
+    		writer.println(result);
+    	}
+    	writer.close();
+    	Process p = Runtime.getRuntime().exec("python rerank.py");	
+    	ArrayList<String> reranked_ids = new ArrayList<String>();
+    	for (String line : Files.readAllLines(Paths.get("reranked_ids.txt"))) {
+    		reranked_ids.add(line.trim());
+    	}
+    	return reranked_ids;
+    }
+   
+    
 
     /*
      * This function gets the first 100 lines of the Posts.xml file and 
@@ -87,9 +89,7 @@ public class QuestionRetreivalBaseline {
         int j=0;
         
         HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
-
-        
-        
+      
         while((line=reader.readLine())!=null && (j++<5000)){
         	if(j%10 == 0)
         	{
@@ -101,9 +101,11 @@ public class QuestionRetreivalBaseline {
 		        	
 		            results.addAll(bsa.retrieveDocuments(qid, "site:travel.stackexchange.com "+query));
 		            
-		            ArrayList list = getRelatedQuestions(results);
+		            ArrayList<String> list = getRelatedQuestions(results);
 		            
-	            	map.put(qid, list);
+		            ArrayList<String> reranked_list = rerank_list(qid,list);
+		            
+	            	map.put(qid, reranked_list);
 		            }
 	        	System.out.println(j);
         	}
@@ -113,7 +115,7 @@ public class QuestionRetreivalBaseline {
     	return map;
     }
 
-	private ArrayList getRelatedQuestions(ArrayList<RetrievalResult> results)
+	private ArrayList<String> getRelatedQuestions(ArrayList<RetrievalResult> results)
 	{
         ArrayList<String> list = new ArrayList<String>();
         
@@ -123,7 +125,6 @@ public class QuestionRetreivalBaseline {
     		String[] p = url.split("/");
     		if(p.length > 4 && p[3].equals("questions") && p[4].matches("[0-9]+") )
         		list.add(p[4]);  	
-        	
         }
         return list;
 	}
