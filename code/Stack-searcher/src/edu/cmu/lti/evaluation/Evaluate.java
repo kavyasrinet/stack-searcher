@@ -85,8 +85,6 @@ public class Evaluate
 						correct++;
 				}
 			}
-			if( k == 1 && correct > 0)
-				System.out.println(questionID);
 			
 			map = map + correct/k;
 		}
@@ -132,6 +130,7 @@ public class Evaluate
 			for(String resultID: e.getValue())
 				if(resultID.matches("[0-9]+") && goldSet.get(questionID).contains(resultID))
 						relevant++;
+			
 			recall = recall + relevant/goldSet.get(questionID).size();
 			
 		}

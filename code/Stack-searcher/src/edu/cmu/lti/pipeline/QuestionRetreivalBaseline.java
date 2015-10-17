@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.search.BingSearchAgent;
@@ -22,7 +23,7 @@ import edu.cmu.lti.search.RetrievalResult;
  */
 public class QuestionRetreivalBaseline {
 	static HashSet<String> stopwords = new HashSet<String>();
-    public static void main(String[] args) throws URISyntaxException, IOException {
+    public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException {
     	QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	Evaluate evaluator = new Evaluate();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
@@ -32,6 +33,7 @@ public class QuestionRetreivalBaseline {
     		stopwords.add(line);
     	}
     	HashMap<String, ArrayList<String>> predicted_results = qrb.crawlBing(10);
+    	predicted_results = rerank_results(predicted_results);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
     	System.out.println("mrr Score = " + evaluator.getMrrScore(predicted_results));
@@ -52,18 +54,38 @@ public class QuestionRetreivalBaseline {
         return title;
     }
     
-    public ArrayList<String> rerank_list(String qid, ArrayList<String> list) throws IOException
+    public static HashMap<String,ArrayList<String>> rerank_results(HashMap<String,ArrayList<String>> predicted_results) throws IOException, InterruptedException
     {   	
     	PrintWriter writer = new PrintWriter("input_ids.txt", "UTF-8");
-    	writer.println(qid);
-    	for(String result : list) {
-    		writer.println(result);
-    	}
+    	for(Entry<String,ArrayList<String>> e  :predicted_results.entrySet())
+		{
+    		String qid = e.getKey();
+	    	writer.println(qid);
+	    	for(String result : e.getValue()) {
+	    		writer.println(result);
+	    	}
+	    	writer.println("###");
+		}
     	writer.close();
-    	Process p = Runtime.getRuntime().exec("python rerank.py");	
-    	ArrayList<String> reranked_ids = new ArrayList<String>();
+    	Process p = Runtime.getRuntime().exec("python rerank.py");
+    	p.waitFor();
+    	HashMap<String,ArrayList<String>> reranked_ids = new HashMap<String,ArrayList<String>>();
+    	boolean new_query = true;
+    	String current_qid = "";
     	for (String line : Files.readAllLines(Paths.get("reranked_ids.txt"))) {
-    		reranked_ids.add(line.trim());
+    		String id = line.trim();
+    		if(id.equals("###"))
+    		{
+    			new_query = true;
+    		}
+    		else if(new_query)
+    		{
+    			reranked_ids.put(id, new ArrayList<String>());
+    			current_qid = id;
+    			new_query = false;
+    		}
+    		else
+    			reranked_ids.get(current_qid).add(id);
     	}
     	return reranked_ids;
     }
@@ -90,7 +112,7 @@ public class QuestionRetreivalBaseline {
         
         HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
       
-        while((line=reader.readLine())!=null && (j++<5000)){
+        while((line=reader.readLine())!=null && (j++<50)){
         	if(j%10 == 0)
         	{
 	        	qid = line.split("\t")[0];
@@ -103,9 +125,9 @@ public class QuestionRetreivalBaseline {
 		            
 		            ArrayList<String> list = getRelatedQuestions(results);
 		            
-		            ArrayList<String> reranked_list = rerank_list(qid,list);
 		            
-	            	map.put(qid, reranked_list);
+		            
+	            	map.put(qid, list);
 		            }
 	        	System.out.println(j);
         	}
