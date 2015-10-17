@@ -3,7 +3,6 @@ package edu.cmu.lti.pipeline;
 
 import java.io.BufferedReader;
 import java.io.File;
-
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -12,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.search.BingSearchAgent;
