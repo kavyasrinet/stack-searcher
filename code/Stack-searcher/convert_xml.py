@@ -1,0 +1,20 @@
+import sys
+import xml.etree.ElementTree as ET
+
+def main():
+	old_xml_file = sys.argv[1]
+	new_xml_file = sys.argv[2]
+
+	f = open(new_xml_file,"w")
+	f.write("<add>\n")	
+	tree  = ET.parse(old_xml_file)
+	root = tree.getroot()
+	for child in root:
+		s = "<doc>"
+		att = child.attrib
+		for field in child.attrib:
+			s +="<field name = \"" + field +"\">" + att[field]  + "</field>\n"
+		s+="</doc>\n"
+		f.write(s.encode('utf-8'))
+	f.write("/add\n")
+main()
