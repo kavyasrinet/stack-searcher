@@ -1,3 +1,10 @@
+"""
+Converts from the Stack exchange xml format given to the XML dormat needed by Solr
+Usage Example:
+
+python convert_xml.py dataset_sample/travel.stackexchange.com/Posts.xml ./Posts 
+"""
+
 import sys
 import xml.etree.ElementTree as ET
 
@@ -16,5 +23,6 @@ def main():
 			s +="<field name = \"" + field +"\">" + att[field]  + "</field>\n"
 		s+="</doc>\n"
 		f.write(s.encode('utf-8'))
-	f.write("/add\n")
+	f.write("</add>\n")
+	f.close()
 main()
