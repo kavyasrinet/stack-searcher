@@ -22,8 +22,7 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
 
 import edu.cmu.lti.evaluation.Evaluate;
-
-import edu.cmu.lti.custom.ExtractKeyword;
+import edu.cmu.lti.custom.GenerateQuery;
 import edu.cmu.lti.search.RetrievalResult;
 /**
  * @author Kavya Srinet.
@@ -40,7 +39,7 @@ public class QuestionRetreivalBaseline {
     		stopwords.add(line);
     	}
     	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(10);
-    	//predicted_results = rerank_results(predicted_results);
+    	predicted_results = rerank_results(predicted_results);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
     	System.out.println("mrr Score = " + evaluator.getMrrScore(predicted_results));
@@ -49,14 +48,16 @@ public class QuestionRetreivalBaseline {
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
     }
     
-    private  String generateQuery(String line) throws IOException
+    private  String generateQuery(String line, ArrayList<String> tags) throws IOException
     {
-    	ExtractKeyword e = new ExtractKeyword();
+    	GenerateQuery e = new GenerateQuery();
     	String[] parts = line.split("\t");
       	
         String title = parts[1].trim();
         title = title.replaceAll("[^A-Za-z0-9 ]", ""); 
-        //title = e.getKeywords(title, stopwords);
+        title = e.getKeywords(title, stopwords);
+       //title = e.addTags(title, tags);
+        //title = e.appendBody(title, body);
         String body = parts[2].trim();
         return title;
     }
@@ -126,7 +127,8 @@ public class QuestionRetreivalBaseline {
 	        	if(!map.containsKey(qid))
 	        	{
 		        	ArrayList<RetrievalResult> results = new ArrayList<>();
-		        	String query = generateQuery(line);
+		        	
+		        	String query = generateQuery(line, new ArrayList<String>());
 		            ArrayList<String> list = new ArrayList<String>();
 		    	    ModifiableSolrParams params = new ModifiableSolrParams();
 		    	    params.set("qt", "/select");
@@ -135,7 +137,6 @@ public class QuestionRetreivalBaseline {
 		    	    	solr_query +=  "+" + query_split;
 		    	    params.set("q", solr_query);
 		    	    params.set("rows", resultSetSize);
-		    		
 		    	    
 		    	    QueryResponse response = solr.query(params);
 		    	    ArrayList<SolrDocument> s = response.getResults();
