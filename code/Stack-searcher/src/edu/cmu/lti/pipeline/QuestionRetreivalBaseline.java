@@ -16,15 +16,17 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.response.TermsResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
 
 import edu.cmu.lti.evaluation.Evaluate;
-import edu.cmu.lti.custom.ExtractKeyword;
+import edu.cmu.lti.custom.GenerateQuery;
 import edu.cmu.lti.search.RetrievalResult;
 
 
@@ -35,7 +37,6 @@ public class QuestionRetreivalBaseline {
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
 		SolrServer solr = new CommonsHttpSolrServer("http://128.237.164.54:8983/solr/travelstack/");
-	    
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	Evaluate evaluator = new Evaluate();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
@@ -44,10 +45,9 @@ public class QuestionRetreivalBaseline {
     		line = line.trim();
     		stopwords.add(line);
     	}
-    	
-    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(10, solr);
-    	//predicted_results = rerank_results(predicted_results);
 
+    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(10, solr);
+   		predicted_results = rerank_results(predicted_results);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
     	System.out.println("mrr Score = " + evaluator.getMrrScore(predicted_results));
@@ -62,6 +62,7 @@ public class QuestionRetreivalBaseline {
 	    params.set("qt", "/select");
 		params.set("q", "Id:"+postid);
 		QueryResponse response = solr.query(params);
+		
 		SolrDocument sd  =  response.getResults().get(0);
 		
 		
@@ -73,14 +74,16 @@ public class QuestionRetreivalBaseline {
 		}
 		return result;
 	}
-    private  String generateQuery(String line) throws IOException
+    private  String generateQuery(String line, ArrayList<String> tags) throws IOException
     {
-    	ExtractKeyword e = new ExtractKeyword();
+    	GenerateQuery e = new GenerateQuery();
     	String[] parts = line.split("\t");
       	
         String title = parts[1].trim();
         title = title.replaceAll("[^A-Za-z0-9 ]", ""); 
-        //title = e.getKeywords(title, stopwords);
+        title = e.getKeywords(title, stopwords);
+       //title = e.addTags(title, tags);
+        //title = e.appendBody(title, body);
         String body = parts[2].trim();
         return title;
     }
@@ -146,7 +149,8 @@ public class QuestionRetreivalBaseline {
 	        	if(!map.containsKey(qid))
 	        	{
 		        	ArrayList<RetrievalResult> results = new ArrayList<>();
-		        	String query = generateQuery(line);
+		        	
+		        	String query = generateQuery(line, new ArrayList<String>());
 		            ArrayList<String> list = new ArrayList<String>();
 		    	    ModifiableSolrParams params = new ModifiableSolrParams();
 		    	    params.set("qt", "/select");
@@ -157,8 +161,8 @@ public class QuestionRetreivalBaseline {
 		    	    
 		    	    params.set("q", solr_query);
 		    	    
-		    	    params.set("rows", resultSetSize);
-		    		
+		    	    params.set("rows", String.valueOf(resultSetSize));
+
 		    	    QueryResponse response = solr.query(params);
 		    	    ArrayList<SolrDocument> s = response.getResults();
 		    	    for(SolrDocument sd: response.getResults())
