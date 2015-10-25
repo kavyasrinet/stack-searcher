@@ -81,11 +81,11 @@ public class QuestionRetreivalBaseline {
       	
         String title = parts[1].trim();
         title = title.replaceAll("[^A-Za-z0-9 ]", ""); 
-        title = e.getKeywords(title, stopwords);
+        //title = e.getKeywords(title, stopwords);
        //title = e.addTags(title, tags);
         //title = e.appendBody(title, body);
-        String body = parts[2].trim();
-        return title;
+       // String body = parts[2].trim().replaceAll("[^A-Za-z0-9 ]", "");        
+        return title ;
     }
     
     public static HashMap<String,ArrayList<String>> rerank_results(HashMap<String,ArrayList<String>> predicted_results) throws IOException, InterruptedException
@@ -144,7 +144,7 @@ public class QuestionRetreivalBaseline {
         
         HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
       
-        while((line=reader.readLine())!=null && (j++<5000)){
+        while((line=reader.readLine())!=null && (j++<50)){
         		qid = line.split("\t")[0];
 	        	if(!map.containsKey(qid))
 	        	{
