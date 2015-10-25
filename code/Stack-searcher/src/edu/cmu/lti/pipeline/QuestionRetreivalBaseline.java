@@ -47,7 +47,7 @@ public class QuestionRetreivalBaseline {
     	}
 
     	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(10, solr);
-   		predicted_results = rerank_results(predicted_results);
+   		//predicted_results = rerank_results(predicted_results);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
     	System.out.println("mrr Score = " + evaluator.getMrrScore(predicted_results));
