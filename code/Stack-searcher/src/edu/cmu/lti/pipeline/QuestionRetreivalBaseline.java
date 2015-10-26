@@ -36,7 +36,7 @@ public class QuestionRetreivalBaseline {
     
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
-		SolrServer solr = new CommonsHttpSolrServer("http://128.237.164.54:8983/solr/travelstack/");
+		SolrServer solr = new CommonsHttpSolrServer("http://128.2.100.173:7574/solr/travelstackexchange/");
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	Evaluate evaluator = new Evaluate();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
@@ -46,7 +46,7 @@ public class QuestionRetreivalBaseline {
     		stopwords.add(line);
     	}
 
-    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(10, solr);
+    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(100, solr);
    		//predicted_results = rerank_results(predicted_results);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
@@ -81,10 +81,11 @@ public class QuestionRetreivalBaseline {
       	
         String title = parts[1].trim();
         title = title.replaceAll("[^A-Za-z0-9 ]", ""); 
+        
         //title = e.getKeywords(title, stopwords);
        //title = e.addTags(title, tags);
         //title = e.appendBody(title, body);
-       // String body = parts[2].trim().replaceAll("[^A-Za-z0-9 ]", "");        
+        String body = parts[2].trim().replaceAll("[^A-Za-z0-9 ]", "");        
         return title ;
     }
     
@@ -144,7 +145,7 @@ public class QuestionRetreivalBaseline {
         
         HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
       
-        while((line=reader.readLine())!=null && (j++<50)){
+        while((line=reader.readLine())!=null && (j++<500)){
         		qid = line.split("\t")[0];
 	        	if(!map.containsKey(qid))
 	        	{
