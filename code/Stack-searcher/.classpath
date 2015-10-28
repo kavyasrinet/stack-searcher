@@ -20,5 +20,6 @@
 	<classpathentry kind="lib" path="jars/woodstox-core-asl-4.4.1.jar"/>
 	<classpathentry kind="lib" path="jars/ws-commons-util.jar"/>
 	<classpathentry kind="lib" path="jars/zookeeper-3.4.6.jar"/>
+	<classpathentry kind="lib" path="jars/stanford-postagger.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

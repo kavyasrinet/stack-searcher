@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,21 +19,16 @@ import edu.cmu.lti.search.Result;
 public class Evaluate
 {
 	HashMap<String, HashSet<String>> goldSet = new HashMap<String,HashSet<String>>();
-	public Evaluate() throws IOException
+	public Evaluate(String query_file) throws IOException
 	{
-		BufferedReader queryReader = new BufferedReader(new FileReader(new File("dataset_sample/question_queries.txt")));
-		BufferedReader resultReader = new BufferedReader(new FileReader(new File("dataset_sample/question_results.txt")));
-		
-		String query;
-		String result;
-		while(( query = queryReader.readLine())!= null && ( result = resultReader.readLine())!= null)
-		{
-			query = query.split("\t")[0];
-			result = result.split("\t")[0];
-			if(!goldSet.containsKey(query))		
-				goldSet.put(query, new HashSet<String>());
-			goldSet.get(query).add(result);
-		}
+
+    	for (String line : Files.readAllLines(Paths.get(query_file))) {
+    		String[] splits = line.trim().split("\t");
+    		HashSet<String> linked_qids = new HashSet<String>();
+    		for(int i=1;i<splits.length;i++)
+    			linked_qids.add(splits[i]);
+    		goldSet.put(splits[0],linked_qids);
+    	}
 	}
 	
 	
