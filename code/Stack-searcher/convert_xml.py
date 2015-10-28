@@ -27,6 +27,10 @@ for child in root:
 	for field in child.attrib:
 		att[field] = re.sub('&', "and", att[field])
 		if field =="Body":
+
+			if "Possible Duplicate" in att[field]:
+				i = att[field].find("</blockquote>")
+				att[field] = att[field][i+ len("</blockquote>") :]
 			att[field] = re.sub('<[^>]*>','',str(att[field]))
 		else :
 			att[field] = re.sub('<|>',' ',str(att[field]))
