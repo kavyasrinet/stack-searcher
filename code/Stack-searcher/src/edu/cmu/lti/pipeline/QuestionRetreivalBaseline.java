@@ -24,6 +24,7 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.TermsResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
+import org.apache.solr.common.util.Hash;
 
 import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.custom.GenerateQuery;
@@ -33,7 +34,7 @@ import edu.cmu.lti.search.RetrievalResult;
 public class QuestionRetreivalBaseline {
 	
 	static HashSet<String> stopwords = new HashSet<String>();
-    
+	SolrServer solr;
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
 		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
@@ -46,7 +47,7 @@ public class QuestionRetreivalBaseline {
     		stopwords.add(line);
     	}
 
-    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(100, solr);
+    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(1000, solr);
    		//predicted_results = rerank_results(predicted_results);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
@@ -56,7 +57,7 @@ public class QuestionRetreivalBaseline {
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
     }
     
-	private static HashMap<String, String>get_post(String postid,  SolrServer solr) throws SolrServerException
+	public static HashMap<String, String>get_post(String postid,  SolrServer solr) throws SolrServerException
 	{	
 		ModifiableSolrParams params = new ModifiableSolrParams();
 	    params.set("qt", "/select");
@@ -73,15 +74,20 @@ public class QuestionRetreivalBaseline {
 		}
 		return result;
 	}
-    private  String generateQuery(String line, ArrayList<String> tags) throws IOException
+    private  String generateQuery(String line,SolrServer solr) throws IOException, SolrServerException
     {
+    	String query;
+    	
     	GenerateQuery e = new GenerateQuery();
     	String[] parts = line.split("\t");
+      	String question_id = parts[0];
+      	 HashMap<String, String> post = get_post(question_id, solr);
       	
-        String title = parts[1].trim();
-        title = title.replaceAll("[^A-Za-z0-9 ]", ""); 
-        String body = parts[2].trim().replaceAll("[^A-Za-z0-9 ]", "");        
-        return title + " " + body;
+      	String title = post.get("Title");
+        String body = post.get("Body");
+        String tags = post.get("Tags");
+        query = title + " " + body + " " + tags; 
+        return query.trim().replaceAll("[^A-Za-z0-9 ]", "");
     }
     
     public static HashMap<String,ArrayList<String>> rerank_results(HashMap<String,ArrayList<String>> predicted_results) throws IOException, InterruptedException
@@ -146,7 +152,7 @@ public class QuestionRetreivalBaseline {
 	        	{
 		        	ArrayList<RetrievalResult> results = new ArrayList<>();
 		        	
-		        	String query = generateQuery(line, new ArrayList<String>());
+		        	String query = generateQuery(line, solr);
 		            ArrayList<String> list = new ArrayList<String>();
 		    	    ModifiableSolrParams params = new ModifiableSolrParams();
 		    	    params.set("qt", "/select");
