@@ -33,6 +33,7 @@ class TfidfTerms {
 //	IDF(t) = log_e(Total number of documents / Number of documents with term t in it).
 	QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
 	static HashSet<String> stopwords = QuestionRetreivalBaseline.stopwords;
+	static HashMap<String,ArrayList<String>> doc_attributes = new HashMap<String,ArrayList<String>>();
 	static SolrServer solr;
 	void setup() {
 	    try {
@@ -64,6 +65,14 @@ class TfidfTerms {
 //	    }
 //	    long endTime = System.nanoTime();
 //	    System.out.println((endTime - startTime)/1000000000);
+		HashMap<String,Double> map = top_terms(2, 10, "5ef3ecc8-55e0-4d5f-9076-f3b295526a88");
+		//get title and body in map
+		//map.get(docId) -> title and body
+		GenerateQuery gq = new GenerateQuery();
+		//1st argument is title +" " + body
+		ArrayList<String> res = doc_attributes.get("5ef3ecc8-55e0-4d5f-9076-f3b295526a88");
+		String newQuery = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
+		System.out.println(newQuery);
 	}
 	
 	private static HashMap<String, Double> top_terms(int n_gram, int top_k, String documentID) throws SolrServerException, IOException {
@@ -107,14 +116,20 @@ class TfidfTerms {
 	    String title_content = title.get(0);
 	    ArrayList<String> body = (ArrayList<String>) sd.getFieldValue("Body");
 		String body_content = body.get(0);
-		String content = (title_content + " " + body_content).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
+		ArrayList<String> attr = new ArrayList<String>();
+		attr.add(title_content);
+		attr.add(body_content);
+		doc_attributes.put(documentID, attr);
+		String full_content = title_content + " " + body_content;
+		String content = (full_content).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
 		String content_noStopwords = GenerateQuery.getKeywords(content, stopwords);
 		String[] token_list = null;
 		if (n_gram == 1) {
 	    	token_list = (content).split("\\s+");
 	    } else {
 	    	ArrayList<String> ngram_list = GenerateQuery.getNGrams(content_noStopwords, n_gram);
-	    	token_list = ngram_list.toArray(token_list);
+	    	token_list = new String[ngram_list.size()]; 
+	    	ngram_list.toArray(token_list);
 	    }
 		return token_list;
 	}
