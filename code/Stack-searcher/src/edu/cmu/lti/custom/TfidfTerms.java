@@ -96,23 +96,26 @@ class TfidfTerms {
 	    return tfidf_map;
 	}
 	
-	private static String[] uniqueTokenList(String documentID, int n_gram) throws SolrServerException, IOException {
+	private static String[]  uniqueTokenList(String documentID, int n_gram) throws SolrServerException, IOException {
 		solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
 		String query = String.format("id:%s", documentID);
 		SolrQuery q = new SolrQuery(query);
 		q.setRows(1);  //one result; documentID should be unique.
 	    ArrayList<SolrDocument> doc =  solr.query(q).getResults();
 	    SolrDocument sd = doc.get(0);
-	    
 	    ArrayList<String> title = (ArrayList<String>) sd.getFieldValue("Title");
 	    String title_content = title.get(0);
 	    ArrayList<String> body = (ArrayList<String>) sd.getFieldValue("Body");
 		String body_content = body.get(0);
-		// @TODO clear punctuation and stop-words? 
-		
 		String content = (title_content + " " + body_content).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
 		String content_noStopwords = GenerateQuery.getKeywords(content, stopwords);
-		String[] token_list = (content).split("\\s+");
+		String[] token_list = null;
+		if (n_gram == 1) {
+	    	token_list = (content).split("\\s+");
+	    } else {
+	    	ArrayList<String> ngram_list = GenerateQuery.getNGrams(content_noStopwords, n_gram);
+	    	token_list = ngram_list.toArray(token_list);
+	    }
 		return token_list;
 	}
 	

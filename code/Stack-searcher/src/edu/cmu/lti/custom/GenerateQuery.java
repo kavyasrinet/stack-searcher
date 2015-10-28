@@ -40,8 +40,8 @@ public class GenerateQuery {
     
   //given n , this function returns back an arrayList of n-grams.
   //  The value of n>= 2
-  public ArrayList<String> getNGrams(String text, int n){	  
-	  ArrayList<String> bigrams = new ArrayList<String>();
+  public static ArrayList<String> getNGrams(String text, int n){	  
+	  ArrayList<String> ngrams = new ArrayList<String>();
 	  String[] unigrams = text.split("\\s+");
 	  int len = unigrams.length;
 	  int i=0;
@@ -58,13 +58,13 @@ public class GenerateQuery {
 			  }
 		  }
 		  if(flag==true)
-			  bigrams.add(cand);
+			  ngrams.add(cand);
 		  else
-			  return bigrams;
+			  return ngrams;
 		  
 		  i++;
 	  }
-	  return bigrams;
+	  return ngrams;
   }
     
     public String getPOS(String title, HashSet<String> stopwords, MaxentTagger tagger){
