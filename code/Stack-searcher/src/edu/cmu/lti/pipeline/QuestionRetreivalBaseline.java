@@ -37,18 +37,22 @@ public class QuestionRetreivalBaseline {
 	SolrServer solr;
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
+    	GenerateQuery generate_query = new GenerateQuery();
 		SolrServer solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
-    	Evaluate evaluator = new Evaluate();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
     	String line ="";
     	while((line=reader.readLine())!=null){
     		line = line.trim();
     		stopwords.add(line);
     	}
+    	
+    	String query_file = "dataset_sample/val.txt";
 
-    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(1000, solr);
+    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(query_file,100, solr, generate_query);
    		//predicted_results = rerank_results(predicted_results);
+
+    	Evaluate evaluator = new Evaluate(query_file);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
     	System.out.println("mrr Score = " + evaluator.getMrrScore(predicted_results));
@@ -75,24 +79,23 @@ public class QuestionRetreivalBaseline {
 		return result;
 	}
     
-	private  String generateQuery(String postId,SolrServer solr) throws IOException, SolrServerException
+	private  String generateQuery(String postId,SolrServer solr, GenerateQuery generate_query) throws IOException, SolrServerException
     {
     	String query;
-    	HashMap<String, String> postAttb  = get_post(postId, solr);
-    	
-    	
-    	GenerateQuery e = new GenerateQuery();
+    	HashMap<String, String> postAttb  = get_post(postId, solr);    	
+
       	String question_id = postId;
       	
       	String title = postAttb.get("Title");
         String body = postAttb.get("Body");
         String tags = postAttb.get("Tags");
+        query = title;
        // query = e.getKeywords(title, stopwords);
-       // query = title+ " "+e.getPOS(title+ " "+body, stopwords);
-       // query = e.addTags(title, tags);
-     //  query = e.appendBody(title, body);
+        //query = title+ " "+generate_query.getPOS(title+ " "+body, stopwords);
+        //query = generate_query.addTags(query, tags);
+        //query = generate_query.appendBody(query, body);
         query = title + " " + body + " " + tags; 
-        return query.trim().replaceAll("[^A-Za-z0-9 ]", "");
+        return query.replaceAll("[^A-Za-z0-9 ']", " ").trim();
     }
     
     public static HashMap<String,ArrayList<String>> rerank_results(HashMap<String,ArrayList<String>> predicted_results) throws IOException, InterruptedException
@@ -140,9 +143,9 @@ public class QuestionRetreivalBaseline {
      * crawls the web using BingSearchAPI and returns back a hashmap that contains the PostId
      * as the key and a list of related PostIds as per Bing
      */
-    public HashMap<String, ArrayList<String>> querySolr(int resultSetSize, SolrServer solr) throws IOException, URISyntaxException, SolrServerException{
+    public HashMap<String, ArrayList<String>> querySolr(String query_file, int resultSetSize, SolrServer solr, GenerateQuery generate_query) throws IOException, URISyntaxException, SolrServerException{
         
-       BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/question_queries.txt")));
+       BufferedReader reader = new BufferedReader(new FileReader(new File(query_file)));
 
         String line = null;
         String qid ;
@@ -151,40 +154,36 @@ public class QuestionRetreivalBaseline {
         
         HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
       
-        while((line=reader.readLine())!=null && (j++<500)){
+        while((line=reader.readLine())!=null && j++<1000){
         		qid = line.split("\t")[0];
-	        	if(!map.containsKey(qid))
-	        	{
-		        	ArrayList<RetrievalResult> results = new ArrayList<>();
-		        	
-		        	String query = generateQuery(qid, solr);
-		            ArrayList<String> list = new ArrayList<String>();
-		    	    ModifiableSolrParams params = new ModifiableSolrParams();
-		    	    params.set("qt", "/select");
+	        	ArrayList<RetrievalResult> results = new ArrayList<>();
+	        	
+	        	String query = generateQuery(qid, solr, generate_query);
+	            ArrayList<String> list = new ArrayList<String>();
+	    	    ModifiableSolrParams params = new ModifiableSolrParams();
+	    	    params.set("qt", "/select");
 
-		    	    String solr_query ="";
-		    	    for(String query_split : query.split(" "))
-		    	    	solr_query +=  "+" + query_split;
-		    	    
-		    	    params.set("q", solr_query);
-		    	    
-		    	    params.set("rows", String.valueOf(resultSetSize));
+	    	    String solr_query ="";
+	    	    for(String query_split : query.split(" "))
+	    	    	solr_query +=  "+" + query_split;
+	    	    
+	    	    params.set("q", solr_query);
+	    	    
+	    	    params.set("rows", String.valueOf(resultSetSize));
 
-		    	    QueryResponse response = solr.query(params);
-		    	    ArrayList<SolrDocument> s = response.getResults();
-		    	    
-		    	    for(int i=1;i<s.size();i++)
-		    	    {	
-		    	    	SolrDocument sd = s.get(i);
-		    	    	ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
-		    	    	ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
-		    	    	if(posttype.get(0) == 1)
-		    	    		list.add(id.get(0).toString());	
-		    	    }
-	            	map.put(qid, list);
-		            }
+	    	    QueryResponse response = solr.query(params);
+	    	    ArrayList<SolrDocument> s = response.getResults();
+	    	    
+	    	    for(int i=1;i<s.size();i++)
+	    	    {	
+	    	    	SolrDocument sd = s.get(i);
+	    	    	ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
+	    	    	ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
+	    	    	if(posttype.get(0) == 1)
+	    	    		list.add(id.get(0).toString());	
+	    	    }
+            	map.put(qid, list);
 	        	System.out.println(j);
-
         }        
     	reader.close();
     	return map;

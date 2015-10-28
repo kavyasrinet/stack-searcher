@@ -15,13 +15,22 @@ import edu.stanford.nlp.tagger.maxent.MaxentTagger;
  */
 
 public class GenerateQuery {
-    
+	MaxentTagger tagger;
+	//bigram_best = 
+	public GenerateQuery(){
+		tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
+		//init_best_bigrams("dataset/all_posts.txt","dataset/train.txt");
+	}
+	
+	//private static init_best_bigrams()
     public static void main(String[] args) throws URISyntaxException, IOException {
     	GenerateQuery e = new GenerateQuery();
     	e.getPOS("Hello my name is Kavya", new HashSet<String>());
     	//e.getBigrams("Hello my name is Kavya");
     
     }
+    
+   
     public String getKeywords(String s, HashSet<String> stopwords) throws IOException{
     	s = s.toLowerCase();
     	
@@ -49,9 +58,8 @@ public class GenerateQuery {
   }
     
     public String getPOS(String title, HashSet<String> stopwords){
-    	
-    	MaxentTagger tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
-       	String tagged = tagger.tagString(title);
+
+    	String tagged = this.tagger.tagString(title);
     	String out = "";
     	String[] parts = tagged.split("\\s+");
     	for(String s: parts){
