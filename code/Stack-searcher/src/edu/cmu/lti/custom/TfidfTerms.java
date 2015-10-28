@@ -44,32 +44,8 @@ public class TfidfTerms {
 	}
 	
 	public static void main(String[] args) throws SolrServerException, IOException {
-//	    long startTime = System.nanoTime();
-//	    List<String> topen;
-//	    String[] uuid = {"333adf4d-ba25-4bfa-a76f-103803d6ab91",
-//	                     "8396bb88-ca29-4fa5-ac63-a69a73014f83",
-//	                     "2a7931e1-ccf5-4c86-926a-48d4862f4ab0",
-//	                     "4f61715e-fa33-4963-9e85-ac9fce681127",
-//	                     "5ef3ecc8-55e0-4d5f-9076-f3b295526a88",
-//	                     "f6cfa2e5-5ea8-4f35-9d5b-d0063b34a3e5",
-//	                     "250894af-41c8-489a-b101-beeb10f08bb2",
-//	                     "798c737d-5b79-4af1-944d-199e8b09fec9",
-//	                     "bbf9141b-c025-4b42-a09f-b93a57048584",
-//	                     "f36f845b-7a0e-4ed5-88be-bacba31edc49"};
-//	    for(String id: uuid) {
-//	      System.out.println(id);
-//	      topen = top_terms(5, id);
-//	      for(String token: topen) {
-////	        System.out.println(token);
-//	      }
-//	    }
-//	    long endTime = System.nanoTime();
-//	    System.out.println((endTime - startTime)/1000000000);
 		HashMap<String,Double> map = top_terms(2, 10, "5ef3ecc8-55e0-4d5f-9076-f3b295526a88");
-		//get title and body in map
-		//map.get(docId) -> title and body
 		GenerateQuery gq = new GenerateQuery();
-		//1st argument is title +" " + body
 		ArrayList<String> res = doc_attributes.get("5ef3ecc8-55e0-4d5f-9076-f3b295526a88");
 		String newQuery = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
 		System.out.println(newQuery);
@@ -107,7 +83,7 @@ public class TfidfTerms {
 	
 	private static String[]  uniqueTokenList(String documentID, int n_gram) throws SolrServerException, IOException {
 		solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
-		String query = String.format("id:%s", documentID);
+		String query = String.format("Id:%s", documentID);
 		SolrQuery q = new SolrQuery(query);
 		q.setRows(1);  //one result; documentID should be unique.
 	    ArrayList<SolrDocument> doc =  solr.query(q).getResults();
@@ -155,8 +131,7 @@ public class TfidfTerms {
 	private static HashMap<String,Double> get_idf_map(String[] token_list) throws SolrServerException {
 		SolrQuery q = new SolrQuery("*:*");
 	    q.setRows(0);  // don't actually request any data; just want numDocs
-	    long total_docs =  solr.query(q).getResults().getNumFound();
-		
+	    long total_docs =  solr.query(q).getResults().getNumFound();		
 	    HashMap<String,Double> idf_map = new HashMap<String,Double>();
 	    for (String token : token_list) {
 			idf_map.put(token, get_idf(total_docs, token));
@@ -170,8 +145,6 @@ public class TfidfTerms {
 		SolrQuery q = new SolrQuery(query);
 		q.setRows(0);  // don't actually request any data; just want numDocs for query term
 	    long docs_with_term =  solr.query(q).getResults().getNumFound();
-//	    System.out.println(query);
-//		System.out.println(docs_with_term);
 	    double term_idf = Math.log((total_docs+1) / (docs_with_term+1));
 	    return term_idf;
 	}
