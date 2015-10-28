@@ -18,8 +18,8 @@ public class GenerateQuery {
     
     public static void main(String[] args) throws URISyntaxException, IOException {
     	GenerateQuery e = new GenerateQuery();
-    	e.getPOS("", new HashSet<String>());
-    //	String s = e.getKeywords("What happens with checked luggage with an airport change?");
+    	e.getPOS("Hello my name is Kavya", new HashSet<String>());
+    	//e.getBigrams("Hello my name is Kavya");
     
     }
     public String getKeywords(String s, HashSet<String> stopwords) throws IOException{
@@ -35,6 +35,18 @@ public class GenerateQuery {
     	
     	return updated;
     }
+    
+  public ArrayList<String> getBigrams(String text){	  
+	  ArrayList<String> bigrams = new ArrayList<String>();
+	  String[] unigrams = text.split("\\s+");
+	  int len = unigrams.length;
+	  int i=0;
+	  while(i<len-1){
+		  bigrams.add(unigrams[i]+" "+unigrams[i+1]);
+		  i++;
+	  }
+	  return bigrams;
+  }
     
     public String getPOS(String title, HashSet<String> stopwords){
     	
@@ -58,8 +70,7 @@ public class GenerateQuery {
     		tag = tag.trim().toLowerCase();
     		s = s + " "+tag;
     	}
-    	return s.trim();
-    	
+    	return s.trim();   	
     }
     
     public String appendBody(String title, String body){
