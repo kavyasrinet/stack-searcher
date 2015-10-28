@@ -18,8 +18,10 @@ public class GenerateQuery {
     
     public static void main(String[] args) throws URISyntaxException, IOException {
     	GenerateQuery e = new GenerateQuery();
-    	e.getPOS("Hello my name is Kavya", new HashSet<String>());
-    	//e.getBigrams("Hello my name is Kavya");
+    	MaxentTagger tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
+//    	e.getPOS("Hello my name is Kavya", new HashSet<String>(), tagger);
+//    	e.getPOS("Hello my name is Tada", new HashSet<String>(), tagger);
+    	e.getNGrams("Hello my name is Kavya",1);
     
     }
     public String getKeywords(String s, HashSet<String> stopwords) throws IOException{
@@ -36,21 +38,38 @@ public class GenerateQuery {
     	return updated;
     }
     
-  public ArrayList<String> getBigrams(String text){	  
+  //given n , this function returns back an arrayList of n-grams.
+  //  The value of n>= 2
+  public ArrayList<String> getNGrams(String text, int n){	  
 	  ArrayList<String> bigrams = new ArrayList<String>();
 	  String[] unigrams = text.split("\\s+");
 	  int len = unigrams.length;
 	  int i=0;
+	  boolean flag = true;
 	  while(i<len-1){
-		  bigrams.add(unigrams[i]+" "+unigrams[i+1]);
+		  
+		  String cand = unigrams[i];
+		  for(int j=1;j<n;j++){
+			  if(i+j < len)
+				  cand  = cand+ " "+unigrams[i+j];
+			  else{
+				  flag = false;
+				  break;
+			  }
+		  }
+		  if(flag==true)
+			  bigrams.add(cand);
+		  else
+			  return bigrams;
+		  
 		  i++;
 	  }
 	  return bigrams;
   }
     
-    public String getPOS(String title, HashSet<String> stopwords){
+    public String getPOS(String title, HashSet<String> stopwords, MaxentTagger tagger){
     	
-    	MaxentTagger tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
+    	
        	String tagged = tagger.tagString(title);
     	String out = "";
     	String[] parts = tagged.split("\\s+");
@@ -59,7 +78,6 @@ public class GenerateQuery {
     		if(tag.equals("NNP") || tag.equals("JJ"))
     			out = out+" "+s.split("_")[0];
     	}
-    	//System.out.println(tagged);
     	return out;
     }
     
