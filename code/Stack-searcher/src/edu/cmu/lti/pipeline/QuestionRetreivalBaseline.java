@@ -89,12 +89,20 @@ public class QuestionRetreivalBaseline {
       	String title = postAttb.get("Title");
         String body = postAttb.get("Body");
         String tags = postAttb.get("Tags");
+
         query = title;
        // query = e.getKeywords(title, stopwords);
         //query = title+ " "+generate_query.getPOS(title+ " "+body, stopwords);
         //query = generate_query.addTags(query, tags);
         //query = generate_query.appendBody(query, body);
-        query = title + " " + body + " " + tags; 
+
+        //Use the top k bigrams containing map for the folowing
+      //    query = generate_query.getRequestUsingBigrams(title+" "+body, map);
+      //   query = generate_query.getKeywords(title, stopwords);
+       // query = title+ " "+generate_query.getPOS(title+ " "+body, stopwords);
+       // query = generate_query.addTags(title, tags);
+     //  query = generate_query.appendBody(title, body);
+        // query = title + " " + body + " " + tags; 
         return query.replaceAll("[^A-Za-z0-9 ']", " ").trim();
     }
     
