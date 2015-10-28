@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
@@ -21,10 +22,47 @@ public class GenerateQuery {
     	MaxentTagger tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
 //    	e.getPOS("Hello my name is Kavya", new HashSet<String>(), tagger);
 //    	e.getPOS("Hello my name is Tada", new HashSet<String>(), tagger);
-    	e.getNGrams("Hello my name is Kavya",1);
+    //	e.getNGrams("Hello my name is Kavya",1);
+    	HashMap<String, Double> map = new HashMap<String, Double>();
+    	map.put("Hello my", 1.0);
+    	map.put("my name",1.0);
+    	map.put("and blabla", 1.0);
+    	e.getRequestUsingBigrams("Hello my name is Kavya and blabla", map);
+    }
     
+    //This function generates the query based on frequent bigrams / phrases
+    public String getRequestUsingBigrams(String text, HashMap<String, Double> map){
+    	ArrayList<String> terms = new ArrayList<String>();
+    	ArrayList<String> bigrams = getNGrams(text,2);
+    	String result = "";
+    	for(int i=0;i<bigrams.size();i++){
+    		String s = bigrams.get(i);
+    		if(map.containsKey(s)){
+    			if(!terms.contains(s)){
+    				result = result + "\"" + s+"\""+" ";
+    				terms.add(s);
+    			}
+    				
+    		}
+    		else{
+    			String[] parts = s.split("\\s+");
+    			int l = terms.size();
+    			if(terms.size()>0 && terms.get(l-1).equals(parts[0])){
+    				terms.remove(l-1);	
+    			}
+    			else{
+    				result=  result + " "+parts[0];
+    				terms.add(parts[0]);
+    			}
+    				
+    			result = result+" " +parts[1]+ " ";
+    			terms.add(parts[1]);
+    		}
+    	}
+    	return result.trim();
     }
     public static String getKeywords(String s, HashSet<String> stopwords) throws IOException{
+    //Remove standard stopwords 
     	s = s.toLowerCase();
     	
     	String[] parts = s.split(" ");
@@ -67,6 +105,7 @@ public class GenerateQuery {
 	  return ngrams;
   }
     
+  //Extracts NERs and Adjectives from the text , using Stanford POS tagger
     public String getPOS(String title, HashSet<String> stopwords, MaxentTagger tagger){
     	
     	
@@ -81,6 +120,8 @@ public class GenerateQuery {
     	return out;
     }
     
+    
+    //Appends tags to the title
     public String addTags(String title, String tagList){
     	String[] tags = tagList.trim().split("\\s+");
     	String s =title.toLowerCase().trim();
@@ -91,6 +132,7 @@ public class GenerateQuery {
     	return s.trim();   	
     }
     
+    //Appends the last line of the body
     public String appendBody(String title, String body){
     	//appends title and last sentence of body
     	String[] sentences = body.split(".");
