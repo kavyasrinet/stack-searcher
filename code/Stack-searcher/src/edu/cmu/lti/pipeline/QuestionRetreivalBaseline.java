@@ -37,7 +37,7 @@ public class QuestionRetreivalBaseline {
 	SolrServer solr;
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
-		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
+		SolrServer solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	Evaluate evaluator = new Evaluate();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
@@ -74,18 +74,23 @@ public class QuestionRetreivalBaseline {
 		}
 		return result;
 	}
-    private  String generateQuery(String line,SolrServer solr) throws IOException, SolrServerException
+    
+	private  String generateQuery(String postId,SolrServer solr) throws IOException, SolrServerException
     {
     	String query;
+    	HashMap<String, String> postAttb  = get_post(postId, solr);
+    	
     	
     	GenerateQuery e = new GenerateQuery();
-    	String[] parts = line.split("\t");
-      	String question_id = parts[0];
-      	 HashMap<String, String> post = get_post(question_id, solr);
+      	String question_id = postId;
       	
-      	String title = post.get("Title");
-        String body = post.get("Body");
-        String tags = post.get("Tags");
+      	String title = postAttb.get("Title");
+        String body = postAttb.get("Body");
+        String tags = postAttb.get("Tags");
+       // query = e.getKeywords(title, stopwords);
+       // query = title+ " "+e.getPOS(title+ " "+body, stopwords);
+       // query = e.addTags(title, tags);
+     //  query = e.appendBody(title, body);
         query = title + " " + body + " " + tags; 
         return query.trim().replaceAll("[^A-Za-z0-9 ]", "");
     }
@@ -152,7 +157,7 @@ public class QuestionRetreivalBaseline {
 	        	{
 		        	ArrayList<RetrievalResult> results = new ArrayList<>();
 		        	
-		        	String query = generateQuery(line, solr);
+		        	String query = generateQuery(qid, solr);
 		            ArrayList<String> list = new ArrayList<String>();
 		    	    ModifiableSolrParams params = new ModifiableSolrParams();
 		    	    params.set("qt", "/select");
