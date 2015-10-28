@@ -36,7 +36,7 @@ public class QuestionRetreivalBaseline {
     
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
-		SolrServer solr = new CommonsHttpSolrServer("http://128.2.100.173:7574/solr/travelstackexchange/");
+		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	Evaluate evaluator = new Evaluate();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
@@ -56,7 +56,7 @@ public class QuestionRetreivalBaseline {
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
     }
     
-	private HashMap<String, String>get_post(String postid,  SolrServer solr) throws SolrServerException
+	private static HashMap<String, String>get_post(String postid,  SolrServer solr) throws SolrServerException
 	{	
 		ModifiableSolrParams params = new ModifiableSolrParams();
 	    params.set("qt", "/select");
@@ -64,7 +64,6 @@ public class QuestionRetreivalBaseline {
 		QueryResponse response = solr.query(params);
 		
 		SolrDocument sd  =  response.getResults().get(0);
-		
 		
 		HashMap<String, String> result = new HashMap<String, String>();
 		for (String field: sd.getFieldNames())
@@ -81,12 +80,8 @@ public class QuestionRetreivalBaseline {
       	
         String title = parts[1].trim();
         title = title.replaceAll("[^A-Za-z0-9 ]", ""); 
-        
-        //title = e.getKeywords(title, stopwords);
-       //title = e.addTags(title, tags);
-        //title = e.appendBody(title, body);
         String body = parts[2].trim().replaceAll("[^A-Za-z0-9 ]", "");        
-        return title ;
+        return title + " " + body;
     }
     
     public static HashMap<String,ArrayList<String>> rerank_results(HashMap<String,ArrayList<String>> predicted_results) throws IOException, InterruptedException
@@ -166,8 +161,10 @@ public class QuestionRetreivalBaseline {
 
 		    	    QueryResponse response = solr.query(params);
 		    	    ArrayList<SolrDocument> s = response.getResults();
-		    	    for(SolrDocument sd: response.getResults())
-		    	    {
+		    	    
+		    	    for(int i=1;i<s.size();i++)
+		    	    {	
+		    	    	SolrDocument sd = s.get(i);
 		    	    	ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
 		    	    	ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
 		    	    	if(posttype.get(0) == 1)
