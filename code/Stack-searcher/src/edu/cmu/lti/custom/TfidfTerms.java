@@ -28,12 +28,12 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 import edu.cmu.lti.pipeline.*;;
 
 
-class TfidfTerms {
+public class TfidfTerms {
 //	TF(t,d) = (Number of times term t appears in a document d) / (Total number of terms in d).
 //	IDF(t) = log_e(Total number of documents / Number of documents with term t in it).
 	QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
 	static HashSet<String> stopwords = QuestionRetreivalBaseline.stopwords;
-	static HashMap<String,ArrayList<String>> doc_attributes = new HashMap<String,ArrayList<String>>();
+	public static HashMap<String,ArrayList<String>> doc_attributes = new HashMap<String,ArrayList<String>>();
 	static SolrServer solr;
 	void setup() {
 	    try {
@@ -75,7 +75,7 @@ class TfidfTerms {
 		System.out.println(newQuery);
 	}
 	
-	private static HashMap<String, Double> top_terms(int n_gram, int top_k, String documentID) throws SolrServerException, IOException {
+	public static HashMap<String, Double> top_terms(int n_gram, int top_k, String documentID) throws SolrServerException, IOException {
 		HashMap<String,Double> tfidf = tfidf_map(documentID,n_gram);
 		Set<String> set = tfidf.keySet();
 	    List<String> keys = new ArrayList<String>(set);

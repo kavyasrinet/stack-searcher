@@ -29,6 +29,7 @@ import org.apache.solr.common.util.Hash;
 import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.custom.GenerateQuery;
 import edu.cmu.lti.search.RetrievalResult;
+import edu.cmu.lti.custom.*;
 
 
 public class QuestionRetreivalBaseline {
@@ -68,6 +69,8 @@ public class QuestionRetreivalBaseline {
 		
 		HashMap<String, String> result = new HashMap<String, String>();
 		for (String field: sd.getFieldNames())
+			
+			
 		{
 			if((!field.equals("id")) && (!field.equals("_version_")))
 				result.put(field,((ArrayList)sd.getFieldValue(field)).get(0).toString());
@@ -81,19 +84,31 @@ public class QuestionRetreivalBaseline {
     	HashMap<String, String> postAttb  = get_post(postId, solr);
     	
     	
+    	
     	GenerateQuery e = new GenerateQuery();
       	String question_id = postId;
       	
       	String title = postAttb.get("Title");
         String body = postAttb.get("Body");
         String tags = postAttb.get("Tags");
-        //Use the top k bigrams containing map for the folowing
+        
+        //Use the top k bigrams containing map for the following
+        /*
+         * Initialize TfidfTerms and call the function to get top k bigrams
+         * 
+         */
+        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
+        GenerateQuery gq = new GenerateQuery();
+        HashMap<String,Double> map = TfidfTerms.top_terms(2, 10, postId);
+        ArrayList<String> res = doc_attributes.get(postId);
+        query = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
+        
       //    query = e.getRequestUsingBigrams(title+" "+body, map);
       //   query = e.getKeywords(title, stopwords);
        // query = title+ " "+e.getPOS(title+ " "+body, stopwords);
        // query = e.addTags(title, tags);
      //  query = e.appendBody(title, body);
-        query = title + " " + body + " " + tags; 
+//        query = title + " " + body + " " + tags; 
         return query.trim().replaceAll("[^A-Za-z0-9 ]", "");
     }
     
