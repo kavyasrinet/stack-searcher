@@ -87,7 +87,9 @@ public class QuestionRetreivalBaseline {
       	String title = postAttb.get("Title");
         String body = postAttb.get("Body");
         String tags = postAttb.get("Tags");
-       // query = e.getKeywords(title, stopwords);
+        //Use the top k bigrams containing map for the folowing
+    //  query = e.getRequestUsingBigrams(title+" "+body, map);
+        // query = e.getKeywords(title, stopwords);
        // query = title+ " "+e.getPOS(title+ " "+body, stopwords);
        // query = e.addTags(title, tags);
      //  query = e.appendBody(title, body);
