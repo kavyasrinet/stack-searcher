@@ -22,7 +22,7 @@ public class GenerateQuery {
     //	String s = e.getKeywords("What happens with checked luggage with an airport change?");
     
     }
-    public String getKeywords(String s, HashSet<String> stopwords) throws IOException{
+    public static String getKeywords(String s, HashSet<String> stopwords) throws IOException{
     	s = s.toLowerCase();
     	
     	String[] parts = s.split(" ");

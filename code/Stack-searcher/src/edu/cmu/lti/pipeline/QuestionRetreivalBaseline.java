@@ -33,7 +33,7 @@ import edu.cmu.lti.search.RetrievalResult;
 
 public class QuestionRetreivalBaseline {
 	
-	static HashSet<String> stopwords = new HashSet<String>();
+	public static HashSet<String> stopwords = new HashSet<String>();
 	SolrServer solr;
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
