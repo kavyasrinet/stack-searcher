@@ -47,9 +47,8 @@ public class GenerateQuery {
     		else{
     			String[] parts = s.split("\\s+");
     			int l = terms.size();
-    			if(terms.get(l-1).equals(parts[0])){
-    				terms.remove(l-1);
-    				
+    			if(terms.size()>0 && terms.get(l-1).equals(parts[0])){
+    				terms.remove(l-1);	
     			}
     			else{
     				result=  result + " "+parts[0];
