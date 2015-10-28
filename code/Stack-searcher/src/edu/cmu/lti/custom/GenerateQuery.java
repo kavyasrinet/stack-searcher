@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
+
+import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 /**
  * @author Kavya Srinet.
  */
@@ -16,6 +18,7 @@ public class GenerateQuery {
     
     public static void main(String[] args) throws URISyntaxException, IOException {
     	GenerateQuery e = new GenerateQuery();
+    	e.getPOS("", new HashSet<String>());
     //	String s = e.getKeywords("What happens with checked luggage with an airport change?");
     
     }
@@ -33,22 +36,37 @@ public class GenerateQuery {
     	return updated;
     }
     
-    public String getNER(String title, HashSet<String> stopwords){
-    	return "";
+    public String getPOS(String title, HashSet<String> stopwords){
+    	
+    	MaxentTagger tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
+       	String tagged = tagger.tagString(title);
+    	String out = "";
+    	String[] parts = tagged.split("\\s+");
+    	for(String s: parts){
+    		String tag = s.split("_")[1];
+    		if(tag.equals("NNP") || tag.equals("JJ"))
+    			out = out+" "+s.split("_")[0];
+    	}
+    	//System.out.println(tagged);
+    	return out;
     }
     
-    public String addTags(String title, ArrayList<String> tags){
+    public String addTags(String title, String tagList){
+    	String[] tags = tagList.trim().split("\\s+");
     	String s =title.toLowerCase().trim();
     	for(String tag: tags){
     		tag = tag.trim().toLowerCase();
     		s = s + " "+tag;
     	}
-    	return s;
+    	return s.trim();
     	
     }
     
     public String appendBody(String title, String body){
-    	return title+ " "+body;
+    	//appends title and last sentence of body
+    	String[] sentences = body.split(".");
+    	
+    	return title+ " "+sentences[sentences.length-1];
     }
     
     

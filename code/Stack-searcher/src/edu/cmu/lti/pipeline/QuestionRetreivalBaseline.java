@@ -24,6 +24,7 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.TermsResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
+import org.apache.solr.common.util.Hash;
 
 import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.custom.GenerateQuery;
@@ -33,10 +34,10 @@ import edu.cmu.lti.search.RetrievalResult;
 public class QuestionRetreivalBaseline {
 	
 	static HashSet<String> stopwords = new HashSet<String>();
-    
+	SolrServer solr;
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
-		SolrServer solr = new CommonsHttpSolrServer("http://128.2.100.173:7574/solr/travelstackexchange/");
+		SolrServer solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	Evaluate evaluator = new Evaluate();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
@@ -46,7 +47,7 @@ public class QuestionRetreivalBaseline {
     		stopwords.add(line);
     	}
 
-    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(100, solr);
+    	HashMap<String, ArrayList<String>> predicted_results = qrb.querySolr(1000, solr);
    		//predicted_results = rerank_results(predicted_results);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
@@ -56,7 +57,7 @@ public class QuestionRetreivalBaseline {
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
     }
     
-	private HashMap<String, String>get_post(String postid,  SolrServer solr) throws SolrServerException
+	public static HashMap<String, String>get_post(String postid,  SolrServer solr) throws SolrServerException
 	{	
 		ModifiableSolrParams params = new ModifiableSolrParams();
 	    params.set("qt", "/select");
@@ -64,7 +65,6 @@ public class QuestionRetreivalBaseline {
 		QueryResponse response = solr.query(params);
 		
 		SolrDocument sd  =  response.getResults().get(0);
-		
 		
 		HashMap<String, String> result = new HashMap<String, String>();
 		for (String field: sd.getFieldNames())
@@ -74,19 +74,25 @@ public class QuestionRetreivalBaseline {
 		}
 		return result;
 	}
-    private  String generateQuery(String line, ArrayList<String> tags) throws IOException
+    
+	private  String generateQuery(String postId,SolrServer solr) throws IOException, SolrServerException
     {
+    	String query;
+    	HashMap<String, String> postAttb  = get_post(postId, solr);
+    	
+    	
     	GenerateQuery e = new GenerateQuery();
-    	String[] parts = line.split("\t");
+      	String question_id = postId;
       	
-        String title = parts[1].trim();
-        title = title.replaceAll("[^A-Za-z0-9 ]", ""); 
-        
-        //title = e.getKeywords(title, stopwords);
-       //title = e.addTags(title, tags);
-        //title = e.appendBody(title, body);
-        String body = parts[2].trim().replaceAll("[^A-Za-z0-9 ]", "");        
-        return title ;
+      	String title = postAttb.get("Title");
+        String body = postAttb.get("Body");
+        String tags = postAttb.get("Tags");
+       // query = e.getKeywords(title, stopwords);
+       // query = title+ " "+e.getPOS(title+ " "+body, stopwords);
+       // query = e.addTags(title, tags);
+     //  query = e.appendBody(title, body);
+        query = title + " " + body + " " + tags; 
+        return query.trim().replaceAll("[^A-Za-z0-9 ]", "");
     }
     
     public static HashMap<String,ArrayList<String>> rerank_results(HashMap<String,ArrayList<String>> predicted_results) throws IOException, InterruptedException
@@ -151,7 +157,7 @@ public class QuestionRetreivalBaseline {
 	        	{
 		        	ArrayList<RetrievalResult> results = new ArrayList<>();
 		        	
-		        	String query = generateQuery(line, new ArrayList<String>());
+		        	String query = generateQuery(qid, solr);
 		            ArrayList<String> list = new ArrayList<String>();
 		    	    ModifiableSolrParams params = new ModifiableSolrParams();
 		    	    params.set("qt", "/select");
@@ -166,8 +172,10 @@ public class QuestionRetreivalBaseline {
 
 		    	    QueryResponse response = solr.query(params);
 		    	    ArrayList<SolrDocument> s = response.getResults();
-		    	    for(SolrDocument sd: response.getResults())
-		    	    {
+		    	    
+		    	    for(int i=1;i<s.size();i++)
+		    	    {	
+		    	    	SolrDocument sd = s.get(i);
 		    	    	ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
 		    	    	ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
 		    	    	if(posttype.get(0) == 1)
