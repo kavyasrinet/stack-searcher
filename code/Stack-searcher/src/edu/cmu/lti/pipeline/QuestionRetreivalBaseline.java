@@ -39,7 +39,8 @@ public class QuestionRetreivalBaseline {
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
     	GenerateQuery generate_query = new GenerateQuery();
-		SolrServer solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
+//		SolrServer solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
+    	SolrServer solr = new CommonsHttpSolrServer("http://localhost:7574/solr/tss/");
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
     	String line ="";
@@ -192,19 +193,25 @@ public class QuestionRetreivalBaseline {
 	    	    
 	    	    params.set("rows", String.valueOf(resultSetSize));
 
-	    	    QueryResponse response = solr.query(params);
-	    	    ArrayList<SolrDocument> s = response.getResults();
-	    	    
-	    	    for(int i=1;i<s.size();i++)
-	    	    {	
-	    	    	SolrDocument sd = s.get(i);
-	    	    	ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
-	    	    	ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
-	    	    	if(posttype.get(0) == 1)
-	    	    		list.add(id.get(0).toString());	
+	    	    try {
+		    	    QueryResponse response = solr.query(params);
+		    	    ArrayList<SolrDocument> s = response.getResults();
+		    	    
+		    	    for(int i=1;i<s.size();i++)
+		    	    {	
+		    	    	SolrDocument sd = s.get(i);
+		    	    	ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
+		    	    	ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
+		    	    	if(posttype.get(0) == 1)
+		    	    		list.add(id.get(0).toString());	
+		    	    }
+	            	map.put(qid, list);
+		        	System.out.println(j);
+	    	    } catch (Exception e) {
+	    	    	System.out.println("Query too long for solr.");
+	        		System.out.println(String.format("Skipped query: %s", solr_query));	
+	    	    	
 	    	    }
-            	map.put(qid, list);
-	        	System.out.println(j);
         }        
     	reader.close();
     	return map;
