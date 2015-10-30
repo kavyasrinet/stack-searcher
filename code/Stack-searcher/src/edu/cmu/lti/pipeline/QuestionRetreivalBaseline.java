@@ -195,18 +195,18 @@ public class QuestionRetreivalBaseline {
 	    	    params.set("rows", String.valueOf(resultSetSize));
 
 	    	    try {
-		    	    QueryResponse response = solr.query(params);
-		    	    ArrayList<SolrDocument> s = response.getResults();
-		    	    
-		    	    for(int i=1;i<s.size();i++)
-		    	    {	
-		    	    	SolrDocument sd = s.get(i);
-		    	    	ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
-		    	    	ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
-		    	    	if(posttype.get(0) == 1)
-		    	    		list.add(id.get(0).toString());	
-		    	    }
-	            	map.put(qid, list);
+					QueryResponse response = solr.query(params);
+					ArrayList<SolrDocument> s = response.getResults();
+					
+					for(int i=1;i<s.size();i++)
+					{	
+						SolrDocument sd = s.get(i);
+						ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
+						ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
+						if(posttype.get(0) == 1)
+							list.add(id.get(0).toString());	
+					}
+					map.put(qid, list);
 		        	System.out.println(j);
 	    	    } catch (Exception e) {
 	    	    	System.out.println("Query failed in solr.");
