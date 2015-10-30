@@ -210,7 +210,7 @@ public class QuestionRetreivalBaseline {
 		        	System.out.println(j);
 	    	    } catch (Exception e) {
 	    	    	System.out.println("Query too long for solr.");
-	        		System.out.println(String.format("Skipped query: %s", solr_query));	
+	    	    	System.out.println(String.format("Skipped query: %s", solr_query));	
 	    	    	
 	    	    }
         }        
