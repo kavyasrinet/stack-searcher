@@ -39,8 +39,8 @@ public class QuestionRetreivalBaseline {
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
     	GenerateQuery generate_query = new GenerateQuery();
-//		SolrServer solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
-    	SolrServer solr = new CommonsHttpSolrServer("http://localhost:7574/solr/tss/");
+		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
+
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
     	String line ="";
@@ -209,9 +209,8 @@ public class QuestionRetreivalBaseline {
 	            	map.put(qid, list);
 		        	System.out.println(j);
 	    	    } catch (Exception e) {
-	    	    	System.out.println("Query too long for solr.");
-	    	    	System.out.println(String.format("Skipped query: %s", solr_query));	
-	    	    	
+	    	    	System.out.println("Query failed in solr.");
+	    	    	System.out.println(String.format("Skipped query: %s", solr_query));		
 	    	    }
         }        
     	reader.close();

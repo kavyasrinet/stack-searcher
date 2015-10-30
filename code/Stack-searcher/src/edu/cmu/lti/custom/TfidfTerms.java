@@ -37,8 +37,7 @@ public class TfidfTerms {
 	static SolrServer solr;
 	void setup() {
 	    try {
-	    	solr = new CommonsHttpSolrServer("http://http://128.237.181.230:8983/solr/travelstackexchange/");
-//	    	solr = new CommonsHttpSolrServer("http://localhost:7574/solr/tss/");
+	    	solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 	    } catch (MalformedURLException ex) {
 	        throw new RuntimeException(ex);
 	    }
@@ -83,8 +82,7 @@ public class TfidfTerms {
 	}
 	
 	private static String[]  uniqueTokenList(String documentID, int n_gram) throws SolrServerException, IOException {
-		solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
-//		solr = new CommonsHttpSolrServer("http://localhost:7574/solr/tss/");
+		solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 		String query = String.format("Id:%s", documentID);
 		SolrQuery q = new SolrQuery(query);
 		q.setRows(1);  //one result; documentID should be unique.
