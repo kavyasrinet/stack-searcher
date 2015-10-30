@@ -21,5 +21,12 @@
 	<classpathentry kind="lib" path="jars/ws-commons-util.jar"/>
 	<classpathentry kind="lib" path="jars/zookeeper-3.4.6.jar"/>
 	<classpathentry kind="lib" path="jars/stanford-postagger.jar"/>
+	<classpathentry kind="lib" path="jars/RankLib.jar"/>
+	<classpathentry kind="lib" path="jars/javaml-0.1.7.jar"/>
+	<classpathentry kind="lib" path="jars/ajt-2.9.jar"/>
+	<classpathentry kind="lib" path="jars/commons-math-1.2.jar"/>
+	<classpathentry kind="lib" path="jars/Jama-1.0.2.jar"/>
+	<classpathentry kind="lib" path="jars/libsvm.jar"/>
+	<classpathentry kind="lib" path="jars/weka.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

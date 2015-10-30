@@ -1,6 +1,5 @@
 package edu.cmu.lti.pipeline;
 
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -73,8 +72,6 @@ public class QuestionRetreivalBaseline {
 		
 		HashMap<String, String> result = new HashMap<String, String>();
 		for (String field: sd.getFieldNames())
-			
-			
 		{
 			if((!field.equals("id")) && (!field.equals("_version_")))
 				result.put(field,((ArrayList)sd.getFieldValue(field)).get(0).toString());
