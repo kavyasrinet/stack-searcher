@@ -29,11 +29,12 @@ import org.apache.solr.common.util.Hash;
 import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.custom.GenerateQuery;
 import edu.cmu.lti.search.RetrievalResult;
+import edu.cmu.lti.custom.*;
 
 
 public class QuestionRetreivalBaseline {
 	
-	static HashSet<String> stopwords = new HashSet<String>();
+	public static HashSet<String> stopwords = new HashSet<String>();
 	SolrServer solr;
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
@@ -72,6 +73,8 @@ public class QuestionRetreivalBaseline {
 		
 		HashMap<String, String> result = new HashMap<String, String>();
 		for (String field: sd.getFieldNames())
+			
+			
 		{
 			if((!field.equals("id")) && (!field.equals("_version_")))
 				result.put(field,((ArrayList)sd.getFieldValue(field)).get(0).toString());
@@ -82,19 +85,29 @@ public class QuestionRetreivalBaseline {
 	private  String generateQuery(String postId,SolrServer solr, GenerateQuery generate_query) throws IOException, SolrServerException
     {
     	String query;
-    	HashMap<String, String> postAttb  = get_post(postId, solr);    	
-
+    	HashMap<String, String> postAttb  = get_post(postId, solr);
+    	GenerateQuery gq = new GenerateQuery();
       	String question_id = postId;
       	
       	String title = postAttb.get("Title");
         String body = postAttb.get("Body");
         String tags = postAttb.get("Tags");
 
-        query = title;
-       // query = e.getKeywords(title, stopwords);
-        //query = title+ " "+generate_query.getPOS(title+ " "+body, stopwords);
-        //query = generate_query.addTags(query, tags);
-        //query = generate_query.appendBody(query, body);
+        //Use the top k bigrams containing map for the following
+        /*
+         * Initialize TfidfTerms and call the function to get top k bigrams
+         * 
+         */
+        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
+        HashMap<String,Double> map = TfidfTerms.top_terms(2, 10, postId);
+        ArrayList<String> res = doc_attributes.get(postId);
+        query = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
+        
+      //    query = e.getRequestUsingBigrams(title+" "+body, map);
+      //   query = e.getKeywords(title, stopwords);
+       // query = title+ " "+e.getPOS(title+ " "+body, stopwords);
+       // query = e.addTags(title, tags);
+     //  query = e.appendBody(title, body);
 
         //Use the top k bigrams containing map for the folowing
       //    query = generate_query.getRequestUsingBigrams(title+" "+body, map);
