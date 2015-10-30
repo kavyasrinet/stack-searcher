@@ -37,18 +37,18 @@ public class TfidfTerms {
 	static SolrServer solr;
 	void setup() {
 	    try {
-	    	solr = new CommonsHttpSolrServer("http://http://128.237.181.230:8983/solr/travelstackexchange/");
+	    	solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 	    } catch (MalformedURLException ex) {
 	        throw new RuntimeException(ex);
 	    }
 	}
 	
 	public static void main(String[] args) throws SolrServerException, IOException {
-		HashMap<String,Double> map = top_terms(2, 10, "5ef3ecc8-55e0-4d5f-9076-f3b295526a88");
-		GenerateQuery gq = new GenerateQuery();
-		ArrayList<String> res = doc_attributes.get("5ef3ecc8-55e0-4d5f-9076-f3b295526a88");
-		String newQuery = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
-		System.out.println(newQuery);
+//		HashMap<String,Double> map = top_terms(2, 10, "5ef3ecc8-55e0-4d5f-9076-f3b295526a88");
+//		GenerateQuery gq = new GenerateQuery();
+//		ArrayList<String> res = doc_attributes.get("5ef3ecc8-55e0-4d5f-9076-f3b295526a88");
+//		String newQuery = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
+//		System.out.println(newQuery);
 	}
 	
 	public static HashMap<String, Double> top_terms(int n_gram, int top_k, String documentID) throws SolrServerException, IOException {
@@ -62,7 +62,7 @@ public class TfidfTerms {
 	            return Double.compare(tfidf.get(s2), tfidf.get(s1)); //reverse order
 	        }
 	    });
-	    List<String> top_k_tokens = keys.subList(0, top_k);
+	    List<String> top_k_tokens = keys.subList(0, Math.min(top_k,keys.size()));
 	    HashMap<String,Double> top_k_terms = new HashMap<String,Double>();
 	    for(String token: top_k_tokens) {
 	    	top_k_terms.put(token,tfidf.get(token));
@@ -82,7 +82,7 @@ public class TfidfTerms {
 	}
 	
 	private static String[]  uniqueTokenList(String documentID, int n_gram) throws SolrServerException, IOException {
-		solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
+		solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 		String query = String.format("Id:%s", documentID);
 		SolrQuery q = new SolrQuery(query);
 		q.setRows(1);  //one result; documentID should be unique.
