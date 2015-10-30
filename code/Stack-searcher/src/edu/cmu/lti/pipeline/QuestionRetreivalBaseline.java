@@ -85,7 +85,7 @@ public class QuestionRetreivalBaseline {
     
 	private  String generateQuery(String postId,SolrServer solr, GenerateQuery generate_query) throws IOException, SolrServerException
     {
-    	String query;
+    	String query = "";
     	HashMap<String, String> postAttb  = get_post(postId, solr);
     	GenerateQuery gq = new GenerateQuery();
       	String question_id = postId;
@@ -99,10 +99,11 @@ public class QuestionRetreivalBaseline {
          * Initialize TfidfTerms and call the function to get top k bigrams
          * 
          */
-        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
-        HashMap<String,Double> map = TfidfTerms.top_terms(2, 10, postId);
-        ArrayList<String> res = doc_attributes.get(postId);
-        query = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
+       
+//        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
+//        HashMap<String,Double> map = TfidfTerms.top_terms(2, 10, postId);
+//        ArrayList<String> res = doc_attributes.get(postId);
+//        query = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
         
       //    query = e.getRequestUsingBigrams(title+" "+body, map);
       //   query = e.getKeywords(title, stopwords);
