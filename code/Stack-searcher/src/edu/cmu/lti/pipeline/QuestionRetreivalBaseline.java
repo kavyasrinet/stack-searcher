@@ -84,13 +84,14 @@ public class QuestionRetreivalBaseline {
     {
     	String query = "";
     	HashMap<String, String> postAttb  = get_post(postId, solr);
-    	GenerateQuery gq = new GenerateQuery();
+
       	String question_id = postId;
       	
       	String title = postAttb.get("Title");
         String body = postAttb.get("Body");
         String tags = postAttb.get("Tags");
 
+        query = title;
         //Use the top k bigrams containing map for the following
         /*
          * Initialize TfidfTerms and call the function to get top k bigrams

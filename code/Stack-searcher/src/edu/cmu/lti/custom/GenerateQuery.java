@@ -123,7 +123,6 @@ public class GenerateQuery {
     	return out;
     }
     
-    
     //Appends tags to the title
     public String addTags(String title, String tagList){
     	String[] tags = tagList.trim().split("\\s+");
@@ -141,8 +140,5 @@ public class GenerateQuery {
     	String[] sentences = body.split(".");
     	
     	return title+ " "+sentences[sentences.length-1];
-    }
-    
-    
-    
+    }    
 }

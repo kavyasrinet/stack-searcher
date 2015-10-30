@@ -16,8 +16,7 @@ public class QuestionRanker
 
 	public HashMap<String, ArrayList<SolrDocument>>load_training_data(String training_file)
 	{	
-		return null;
-		
+		return null;	
 	}
 	
 	public double[] extract_features(SolrDocument s)
@@ -27,7 +26,7 @@ public class QuestionRanker
 	
 	public void train_model(String training_file)
 	{
-		return null;
+
 	}
 	
 	public HashMap<String, ArrayList<SolrDocument>>rank()
