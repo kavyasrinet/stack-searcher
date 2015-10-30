@@ -39,7 +39,8 @@ public class QuestionRetreivalBaseline {
 	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
    
     	GenerateQuery generate_query = new GenerateQuery();
-		SolrServer solr = new CommonsHttpSolrServer("http://128.237.181.230:8983/solr/travelstackexchange/");
+		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
+
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
     	String line ="";
@@ -84,7 +85,7 @@ public class QuestionRetreivalBaseline {
     
 	private  String generateQuery(String postId,SolrServer solr, GenerateQuery generate_query) throws IOException, SolrServerException
     {
-    	String query;
+    	String query = "";
     	HashMap<String, String> postAttb  = get_post(postId, solr);
     	GenerateQuery gq = new GenerateQuery();
       	String question_id = postId;
@@ -98,10 +99,11 @@ public class QuestionRetreivalBaseline {
          * Initialize TfidfTerms and call the function to get top k bigrams
          * 
          */
-        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
-        HashMap<String,Double> map = TfidfTerms.top_terms(2, 10, postId);
-        ArrayList<String> res = doc_attributes.get(postId);
-        query = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
+       
+//        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
+//        HashMap<String,Double> map = TfidfTerms.top_terms(2, 10, postId);
+//        ArrayList<String> res = doc_attributes.get(postId);
+//        query = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
         
       //    query = e.getRequestUsingBigrams(title+" "+body, map);
       //   query = e.getKeywords(title, stopwords);
@@ -192,19 +194,24 @@ public class QuestionRetreivalBaseline {
 	    	    
 	    	    params.set("rows", String.valueOf(resultSetSize));
 
-	    	    QueryResponse response = solr.query(params);
-	    	    ArrayList<SolrDocument> s = response.getResults();
-	    	    
-	    	    for(int i=1;i<s.size();i++)
-	    	    {	
-	    	    	SolrDocument sd = s.get(i);
-	    	    	ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
-	    	    	ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
-	    	    	if(posttype.get(0) == 1)
-	    	    		list.add(id.get(0).toString());	
-	    	    }
-            	map.put(qid, list);
+	    	    try {
+			QueryResponse response = solr.query(params);
+			ArrayList<SolrDocument> s = response.getResults();
+			
+			for(int i=1;i<s.size();i++)
+			{	
+				SolrDocument sd = s.get(i);
+				ArrayList<Long> id = (ArrayList<Long>)  sd.getFieldValue("Id");
+				ArrayList<Long> posttype = (ArrayList<Long>) sd.getFieldValue("PostTypeId");
+				if(posttype.get(0) == 1)
+					list.add(id.get(0).toString());	
+			}
+			map.put(qid, list);
 	        	System.out.println(j);
+	    	    } catch (Exception e) {
+	    	    	System.out.println("Query failed in solr.");
+	    	    	System.out.println(String.format("Skipped query: %s", solr_query));		
+	    	    }
         }        
     	reader.close();
     	return map;
