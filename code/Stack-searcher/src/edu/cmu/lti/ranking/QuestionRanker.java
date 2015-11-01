@@ -86,7 +86,7 @@ public class QuestionRanker
 		return training_data;
 	}
 	
-	public ArrayList<Double> extract_features(SolrDocument doc, SolrDocument query)
+	public ArrayList<Double> extract_features(SolrDocument doc)
 	{
 		/*
 		 * Features are:
@@ -152,18 +152,19 @@ public class QuestionRanker
 					feats.addAll(nones);
 			}				
 
+//			takes in SolrDocument doc, SolrDocument query
 			// Compute semantic dependency model score
-			String query_content = "";
-			String document_content = "";
-			if(query.containsKey("Title"))
-				query_content += query.getFieldValue("Title");
-			if(query.containsKey("Body"))
-				query_content += " " + query.getFieldValue("Body");
-			if(doc.containsKey("Title"))
-				document_content += doc.getFieldValue("Title");
-			if(doc.containsKey("Body"))
-				document_content += " " + doc.getFieldValue("Body");
-			feats.add(sdm_score(query_content,document_content));
+//			String query_content = "";
+//			String document_content = "";
+//			if(query.containsKey("Title"))
+//				query_content += query.getFieldValue("Title");
+//			if(query.containsKey("Body"))
+//				query_content += " " + query.getFieldValue("Body");
+//			if(doc.containsKey("Title"))
+//				document_content += doc.getFieldValue("Title");
+//			if(doc.containsKey("Body"))
+//				document_content += " " + doc.getFieldValue("Body");
+//			feats.add(sdm_score(query_content,document_content));
 		}
 		return feats;
 	}
@@ -216,10 +217,10 @@ public class QuestionRanker
 		Double trigramUScore;
 		// default weights
 		Double unigramWeight = 0.1; 
-		Double bigramOWeight = 0.1;
-		Double bigramUWeight = 0.05; 
+		Double bigramOWeight = 0.2;
+		Double bigramUWeight = 0.1; 
 		Double trigramOWeight = 0.8;
-		Double trigramUWeight = 0.05;
+		Double trigramUWeight = 0.1;
 		int w = 8; // default window for unordered computation. 
 		
 		String query = (query_raw).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
@@ -296,7 +297,7 @@ public class QuestionRanker
 		ArrayList<ArrayList<Double>> features = new ArrayList<ArrayList<Double>>();
 		for(String id: mapResults.keySet()){
 			for(SolrDocument doc: mapResults.get(id)){
-				features.add(extract_features(doc,query));
+				features.add(extract_features(doc));
 			}
 		}
 		return features;

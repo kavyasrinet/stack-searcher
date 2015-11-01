@@ -52,7 +52,7 @@ public class QuestionRetreivalBaseline {
 
     	
     	HashMap<String, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
-    //	ArrayList<ArrayList<Double>> feats = ranker.getFeaturesFromPosts(docs);
+    	//	ArrayList<ArrayList<Double>> feats = ranker.getFeaturesFromPosts(docs);
     	HashMap<String, ArrayList<String>> predicted_results = new HashMap<String, ArrayList<String>>();
     	retreivedIds(docs,predicted_results );
    		//predicted_results = rerank_results(predicted_results);
