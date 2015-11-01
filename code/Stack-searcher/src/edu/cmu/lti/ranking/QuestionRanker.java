@@ -11,6 +11,7 @@ import net.sf.javaml.*;
 import net.sf.javaml.classification.Classifier;
 
 import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
@@ -21,7 +22,7 @@ public class QuestionRanker
 	SolrServer solr;
 	Classifier C;
 
-	public HashMap<String, ArrayList<SolrDocument>>load_training_data(String training_file) throws IOException
+	public HashMap<String, ArrayList<SolrDocument>>load_training_data(String training_file) throws IOException, SolrServerException
 	{	
 		HashMap<String, ArrayList<SolrDocument>> training_data = new HashMap<String, ArrayList<SolrDocument>>();
 		
@@ -29,7 +30,7 @@ public class QuestionRanker
 			String [] splits = line.split("\t");
 			String q_id = splits[0];
 			ArrayList<SolrDocument> solr_doclist = new ArrayList<SolrDocument>();
-			for(int j=1;i<splits.length;j++)
+			for(int j=1;j<splits.length;j++)
 			{
 				ModifiableSolrParams params = new ModifiableSolrParams();
 				params.set("qt", "/select");
