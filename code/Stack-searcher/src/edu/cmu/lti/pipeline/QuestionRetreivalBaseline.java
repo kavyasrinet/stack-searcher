@@ -24,6 +24,7 @@ import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.custom.GenerateQuery;
 import edu.cmu.lti.search.RetrievalResult;
 import edu.cmu.lti.custom.*;
+import edu.cmu.lti.ranking.*;
 
 
 public class QuestionRetreivalBaseline {
@@ -34,8 +35,9 @@ public class QuestionRetreivalBaseline {
    
 
     	GenerateQuery generate_query = new GenerateQuery();
+    	QuestionRanker ranker = new QuestionRanker();
 
-			SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelStackSearcher/");
+			SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 
 
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
@@ -50,6 +52,7 @@ public class QuestionRetreivalBaseline {
 
     	
     	HashMap<String, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
+    //	ArrayList<ArrayList<Double>> feats = ranker.getFeaturesFromPosts(docs);
     	HashMap<String, ArrayList<String>> predicted_results = new HashMap<String, ArrayList<String>>();
     	retreivedIds(docs,predicted_results );
    		//predicted_results = rerank_results(predicted_results);
@@ -68,6 +71,7 @@ public class QuestionRetreivalBaseline {
     		ArrayList<String> ids = new ArrayList<String>();    		
     		ArrayList<SolrDocument> sd = docs.get(key);
     		for(SolrDocument doc : sd){
+    			
     			ArrayList<Long> id = (ArrayList<Long>)  doc.getFieldValue("Id");
     			ids.add(id.get(0).toString());
     		}
