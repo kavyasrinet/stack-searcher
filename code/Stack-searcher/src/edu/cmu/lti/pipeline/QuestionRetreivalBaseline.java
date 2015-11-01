@@ -30,15 +30,16 @@ import edu.cmu.lti.ranking.*;
 public class QuestionRetreivalBaseline {
 	
 	public static HashSet<String> stopwords = new HashSet<String>();
-	SolrServer solr;
-	public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException, SolrServerException {
+	
+	public static void main(String[] args) throws Exception {
    
 
     	GenerateQuery generate_query = new GenerateQuery();
-    	QuestionRanker ranker = new QuestionRanker();
 
-			SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
+		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
+    	QuestionRanker ranker = new QuestionRanker(solr);
 
+    	ranker.train_model( "dataset_sample/train.txt");
 
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
@@ -51,12 +52,13 @@ public class QuestionRetreivalBaseline {
     	String query_file = "dataset_sample/val.txt";
 
     	
-    	HashMap<String, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
+    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
     //	ArrayList<ArrayList<Double>> feats = ranker.getFeaturesFromPosts(docs);
-    	HashMap<String, ArrayList<String>> predicted_results = new HashMap<String, ArrayList<String>>();
-    	retreivedIds(docs,predicted_results );
+    	
    		//predicted_results = rerank_results(predicted_results);
-
+    	HashMap<SolrDocument, ArrayList<SolrDocument>> reranked_docs = ranker.rerank(docs);
+    	
+    	HashMap<String, ArrayList<String>> predicted_results = retreivedIds(reranked_docs);
     	Evaluate evaluator = new Evaluate(query_file);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
@@ -66,18 +68,19 @@ public class QuestionRetreivalBaseline {
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
     }
     
-	public static void retreivedIds(HashMap<String, ArrayList<SolrDocument>> docs, HashMap<String, ArrayList<String>> predicted_results){
-		for(String key : docs.keySet()){
+	public static HashMap<String, ArrayList<String>> retreivedIds(HashMap<SolrDocument, ArrayList<SolrDocument>> docs){
+		HashMap<String, ArrayList<String>> predicted_results = new HashMap<String, ArrayList<String>>(); 
+		for(SolrDocument key : docs.keySet()){
     		ArrayList<String> ids = new ArrayList<String>();    		
     		ArrayList<SolrDocument> sd = docs.get(key);
     		for(SolrDocument doc : sd){
-    			
     			ArrayList<Long> id = (ArrayList<Long>)  doc.getFieldValue("Id");
     			ids.add(id.get(0).toString());
     		}
-    		predicted_results.put(key, ids);
+			ArrayList<Long> id = (ArrayList<Long>)  key.getFieldValue("Id");
+    		predicted_results.put(id.get(0).toString(), ids);
     	}
-		return ;
+		return predicted_results;
 	}
 	
 	public static HashMap<String, String>get_post(String postid,  SolrServer solr) throws SolrServerException
@@ -98,7 +101,7 @@ public class QuestionRetreivalBaseline {
 		return result;
 	}
     
-	private  String generateQuery(String postId,SolrServer solr, GenerateQuery generate_query) throws IOException, SolrServerException
+	private static  String generateQuery(String postId,SolrServer solr, GenerateQuery generate_query) throws IOException, SolrServerException
     {
     	String query = "";
     	HashMap<String, String> postAttb  = get_post(postId, solr);
@@ -185,7 +188,7 @@ public class QuestionRetreivalBaseline {
      * crawls the web using BingSearchAPI and returns back a hashmap that contains the PostId
      * as the key and a list of related PostIds as per Bing
      */
-    public HashMap<String, ArrayList<SolrDocument>> querySolr(String query_file, int resultSetSize, SolrServer solr, GenerateQuery generate_query) throws IOException, URISyntaxException, SolrServerException{
+    public static HashMap<SolrDocument, ArrayList<SolrDocument>> querySolr(String query_file, int resultSetSize, SolrServer solr, GenerateQuery generate_query) throws IOException, URISyntaxException, SolrServerException{
         
        BufferedReader reader = new BufferedReader(new FileReader(new File(query_file)));
 
@@ -194,15 +197,23 @@ public class QuestionRetreivalBaseline {
 
         int j=0;
         
-        HashMap<String, ArrayList<SolrDocument>> map = new HashMap<String, ArrayList<SolrDocument>>();
+        HashMap<SolrDocument, ArrayList<SolrDocument>> map = new HashMap<SolrDocument, ArrayList<SolrDocument>>();
       
-        while((line=reader.readLine())!=null && j++<1000){
+        while((line=reader.readLine())!=null){
+        		j++;
         		qid = line.split("\t")[0];
-	        	ArrayList<RetrievalResult> results = new ArrayList<>();
+    			ModifiableSolrParams params = new ModifiableSolrParams();
+    			params.set("qt", "/select");
+    			params.set("q", "Id:"+qid);
+    			params.set("rows", "1");
+    			QueryResponse response = solr.query(params);
+    			SolrDocument qid_solrdoc =  response.getResults().get(0);		
+    			
+        		ArrayList<RetrievalResult> results = new ArrayList<>();
 	        	
 	        	String query = generateQuery(qid, solr, generate_query);
 	            ArrayList<SolrDocument> list = new ArrayList<SolrDocument>();
-	    	    ModifiableSolrParams params = new ModifiableSolrParams();
+	    	    params = new ModifiableSolrParams();
 	    	    params.set("qt", "/select");
 
 	    	    String solr_query ="";
@@ -216,7 +227,7 @@ public class QuestionRetreivalBaseline {
 	    	    try {
 
 
-	    	    QueryResponse response = solr.query(params);
+	    	    response = solr.query(params);
 	    	    ArrayList<SolrDocument> s = response.getResults();
 	    	    
 	    	    for(int i=1;i<s.size();i++)
@@ -227,7 +238,7 @@ public class QuestionRetreivalBaseline {
 	    	    	if(posttype.get(0) == 1)
 	    	    		list.add(s.get(i));//id.get(0).toString());	
 	    	    }
-            	map.put(qid, list);
+            	map.put(qid_solrdoc, list);
 
 	        	System.out.println(j);
 	    	    } catch (Exception e) {
