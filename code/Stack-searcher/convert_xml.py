@@ -26,7 +26,7 @@ for child in root:
 	att = child.attrib
 	for field in child.attrib:
 		att[field] = re.sub('&', "and", att[field])
-		if field =="Body":
+		if field =="Body" or field =="AboutMe":
 
 			if "Possible Duplicate" in att[field]:
 				i = att[field].find("</blockquote>")
