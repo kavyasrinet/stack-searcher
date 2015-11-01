@@ -16,8 +16,6 @@ import net.sf.javaml.classification.Classifier;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
@@ -104,7 +102,7 @@ public class QuestionRanker
 		 * 8. User's #views
 		 * 9. User's Upvotes
 		 * 10. User's Downvotes
-		 * 11. SDM score for query,doc
+		 * 11. SDM score for (query,doc)
 		 */
 		ArrayList<Double> feats = new ArrayList<Double>();
 		ArrayList<Double> nones = new ArrayList<Double>();
@@ -160,9 +158,9 @@ public class QuestionRanker
 			String query_content = "";
 			String document_content = "";
 			if(query.containsKey("Title"))
-				query_content += doc.getFieldValue("Title");
+				query_content += query.getFieldValue("Title");
 			if(query.containsKey("Body"))
-				query_content += " " + doc.getFieldValue("Body");
+				query_content += " " + query.getFieldValue("Body");
 			if(doc.containsKey("Title"))
 				document_content += doc.getFieldValue("Title");
 			if(doc.containsKey("Body"))
@@ -206,9 +204,17 @@ public class QuestionRanker
 	}
 	
 	public Double sdm_score(String query_raw, String document_raw) {
-		Double unigramsScore;
-		Double bigramsOScore;
-		Double bigramsUScore;
+		Double unigramScore;
+		Double bigramOScore;
+		Double bigramUScore;
+		Double trigramOScore;
+		Double trigramUScore;
+		// default weights
+		Double unigramWeight = 0.1; 
+		Double bigramOWeight = 0.1;
+		Double bigramUWeight = 0.05; 
+		Double trigramOWeight = 0.8;
+		Double trigramUWeight = 0.05;
 		int w = 8; // default window for unordered computation. 
 		
 		String query = (query_raw).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
@@ -217,33 +223,57 @@ public class QuestionRanker
 		// compute similarity for unigrams
 		ArrayList<String> unigramsQ = (ArrayList<String>) Arrays.asList((query).split("\\s+"));
 		if (unigramsQ == null) {
-			return 0.0;
+			return null;
 		} else {
 			Set<String> uniqueUnigramsQ = new HashSet<String>(unigramsQ); 
 			ArrayList<String> unigramsD = (ArrayList<String>) Arrays.asList((document).split("\\s+"));
-			unigramsScore = overlap_countO(uniqueUnigramsQ,unigramsD);
+			unigramScore = overlap_countO(uniqueUnigramsQ,unigramsD);
 		}
 		// compute similarity for bigrams
 		ArrayList<String> bigramsQ = GenerateQuery.getNGrams(query, 2);
 		if (bigramsQ == null) {
-			return 0.0;
+			return null;
 		} else {
 			// exact 'ordered' match
 			Set<String> uniqueBigramsQ = new HashSet<String>(bigramsQ);
 			ArrayList<String> bigramsD = GenerateQuery.getNGrams(document, 2);
-			bigramsOScore = overlap_countO(uniqueBigramsQ,bigramsD);
+			bigramOScore = overlap_countO(uniqueBigramsQ,bigramsD);
 			
 			// 'unordered' match within window (default w = 8)
-			ArrayList<String> windowD = GenerateQuery.getNGrams(document, w);
-			ArrayList<Set<String>> windowSetD = new ArrayList<Set<String>>();
-			for (String window: windowD) {
+			ArrayList<String> windowDBi = GenerateQuery.getNGrams(document, w);
+			ArrayList<Set<String>> windowSetDBi = new ArrayList<Set<String>>();
+			for (String window: windowDBi) {
 				String[] windowTerms = window.split("\\s+");
 				Set<String> currSet = new HashSet<String>(Arrays.asList(windowTerms)); 
-				windowSetD.add(currSet);
+				windowSetDBi.add(currSet);
 			}
-			bigramsUScore = overlap_countU(uniqueBigramsQ,windowSetD);
+			bigramUScore = overlap_countU(uniqueBigramsQ,windowSetDBi);
 		}
-		return (unigramsScore + bigramsOScore + bigramsUScore);
+		// compute similarity for trigrams
+		ArrayList<String> trigramsQ = GenerateQuery.getNGrams(query, 3);
+		if (trigramsQ == null) {
+			return null;
+		} else {
+			// exact 'ordered' match
+			Set<String> uniqueTrigramsQ = new HashSet<String>(trigramsQ);
+			ArrayList<String> TrigramsD = GenerateQuery.getNGrams(document, 3);
+			trigramOScore = overlap_countO(uniqueTrigramsQ,TrigramsD);
+			
+			// 'unordered' match within window (default w = 8)
+			ArrayList<String> windowDTri = GenerateQuery.getNGrams(document, w);
+			ArrayList<Set<String>> windowSetDTri = new ArrayList<Set<String>>();
+			for (String window: windowDTri) {
+				String[] windowTerms = window.split("\\s+");
+				Set<String> currSet = new HashSet<String>(Arrays.asList(windowTerms)); 
+				windowSetDTri.add(currSet);
+			}
+			trigramUScore = overlap_countU(uniqueTrigramsQ,windowSetDTri);
+		}
+		return ((unigramWeight*unigramScore) + 
+				(bigramOWeight*bigramOScore) + 
+				(bigramUWeight*bigramUScore) + 
+				(trigramOWeight*trigramOScore) + 
+				(trigramUWeight*trigramUScore));
 		
 	}
 	
