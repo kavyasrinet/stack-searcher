@@ -37,7 +37,7 @@ public class QuestionRetreivalBaseline {
     	GenerateQuery generate_query = new GenerateQuery();
     	QuestionRanker ranker = new QuestionRanker();
 
-			SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
+			SolrServer solr = new CommonsHttpSolrServer("http://128.2.220.69:8983/solr/travelstackexchange/");
 
 
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();

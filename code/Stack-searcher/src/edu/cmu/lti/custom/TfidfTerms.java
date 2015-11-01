@@ -37,7 +37,7 @@ public class TfidfTerms {
 	static SolrServer solr;
 	void setup() {
 	    try {
-	    	solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
+	    	solr = new CommonsHttpSolrServer("http://128.2.220.69:8983/solr/travelstackexchange/");
 	    } catch (MalformedURLException ex) {
 	        throw new RuntimeException(ex);
 	    }
@@ -82,7 +82,7 @@ public class TfidfTerms {
 	}
 	
 	private static String[]  uniqueTokenList(String documentID, int n_gram) throws SolrServerException, IOException {
-		solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
+		solr = new CommonsHttpSolrServer("http://128.2.220.69:8983/solr/travelstackexchange/");
 		String query = String.format("Id:%s", documentID);
 		SolrQuery q = new SolrQuery(query);
 		q.setRows(1);  //one result; documentID should be unique.
@@ -140,7 +140,7 @@ public class TfidfTerms {
 	}
 
 	private static double get_idf(long total_docs, String term) throws SolrServerException {
-		// http://localhost:8983/solr/tss/select/?&q=Antarctica&wt=json&start=0&rows=0&indent=on
+		// http://128.2.220.69:8983/solr/tss/select/?&q=Antarctica&wt=json&start=0&rows=0&indent=on
 		String query = String.format("\"%s\"", term);
 		SolrQuery q = new SolrQuery(query);
 		q.setRows(0);  // don't actually request any data; just want numDocs for query term
