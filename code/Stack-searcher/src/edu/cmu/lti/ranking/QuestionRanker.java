@@ -62,8 +62,6 @@ public class QuestionRanker
     	    	userInfo.put(Id, info);
     	    	userNameInfo.put(name, info);
     	    }
-		    
-		
 	}
 
 	public HashMap<String, ArrayList<SolrDocument>>load_training_data(String training_file) throws IOException, SolrServerException
@@ -188,14 +186,21 @@ public class QuestionRanker
 		return overlap_score;
 	}
 	
-	public Double overlap_countU(Set<String> src, ArrayList<Set<String>> tar) {
+	// Currently written exclusively for bigram.trigram ie n=2,3
+	public Double overlap_countU(Set<String> src, ArrayList<Set<String>> tar, int n) {
 		Double overlap_score = 0.0;
+		String q1 = "";
+		String q2 = "";
+		String q3 = "";
 		for (String b: src) {
-			String[] bigram = b.split("\\s+");
-			String q1 = bigram[0];
-			String q2 = bigram[1];
+			String[] ngram = b.split("\\s+");
+			q1 = ngram[0];
+			q2 = ngram[1];
+			if (n > 2) {
+				q3 = ngram[2];
+			}
 			for (Set<String> win: tar) {
-				if (win.contains(q1) & win.contains(q2)) {
+				if (win.contains(q1) & win.contains(q2) & (n < 3 | win.contains(q3))) {
 					overlap_score += 1.0;
 				}
 			}
@@ -247,7 +252,7 @@ public class QuestionRanker
 				Set<String> currSet = new HashSet<String>(Arrays.asList(windowTerms)); 
 				windowSetDBi.add(currSet);
 			}
-			bigramUScore = overlap_countU(uniqueBigramsQ,windowSetDBi);
+			bigramUScore = overlap_countU(uniqueBigramsQ,windowSetDBi,2);
 		}
 		// compute similarity for trigrams
 		ArrayList<String> trigramsQ = GenerateQuery.getNGrams(query, 3);
@@ -267,7 +272,7 @@ public class QuestionRanker
 				Set<String> currSet = new HashSet<String>(Arrays.asList(windowTerms)); 
 				windowSetDTri.add(currSet);
 			}
-			trigramUScore = overlap_countU(uniqueTrigramsQ,windowSetDTri);
+			trigramUScore = overlap_countU(uniqueTrigramsQ,windowSetDTri,3);
 		}
 		return ((unigramWeight*unigramScore) + 
 				(bigramOWeight*bigramOScore) + 
