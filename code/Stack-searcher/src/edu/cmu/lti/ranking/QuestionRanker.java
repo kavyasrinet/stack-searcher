@@ -90,20 +90,21 @@ public class QuestionRanker
 		return training_data;
 	}
 	
-	public ArrayList<Double> extract_features(SolrDocument doc, SolrDocument q)
+	public ArrayList<Double> extract_features(SolrDocument doc, SolrDocument query)
 	{
 		/*
 		 * Features are:
 		 * 1. Score
 		 * 2. ViewCount
 		 * 3. AnswerCount
-		 * 4. Favorite Count
-		 * 5. Comment Count
+		 * 4. Comment Count
+		 * 5. Favorite Count
 		 * 6. AcceptedAnswerId - binary
 		 * 7. User's reputation
 		 * 8. User's #views
 		 * 9. User's Upvotes
 		 * 10. User's Downvotes
+		 * 11. SDM score for query,doc
 		 */
 		ArrayList<Double> feats = new ArrayList<Double>();
 		ArrayList<Double> nones = new ArrayList<Double>();
@@ -158,9 +159,9 @@ public class QuestionRanker
 			// Compute semantic dependency model score
 			String query_content = "";
 			String document_content = "";
-			if(q.containsKey("Title"))
+			if(query.containsKey("Title"))
 				query_content += doc.getFieldValue("Title");
-			if(q.containsKey("Body"))
+			if(query.containsKey("Body"))
 				query_content += " " + doc.getFieldValue("Body");
 			if(doc.containsKey("Title"))
 				document_content += doc.getFieldValue("Title");
