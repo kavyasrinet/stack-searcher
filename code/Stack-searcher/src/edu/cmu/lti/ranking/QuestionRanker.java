@@ -189,12 +189,11 @@ public class QuestionRanker
 		return null;
 	}
 	
-	public ArrayList<ArrayList<Double>> getFeaturesFromPosts(HashMap<String, ArrayList<SolrDocument>> mapResults){
+	public ArrayList<ArrayList<Double>> getFeaturesFromPosts(HashMap<String, ArrayList<SolrDocument>> mapResults, SolrDocument query){
 		ArrayList<ArrayList<Double>> features = new ArrayList<ArrayList<Double>>();
 		for(String id: mapResults.keySet()){
 			for(SolrDocument doc: mapResults.get(id)){
-				// @TODO need to pass in query document
-//				features.add(extract_features(doc));
+				features.add(extract_features(doc,query));
 			}
 		}
 		return features;
