@@ -1,16 +1,18 @@
 package edu.cmu.lti.ranking;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import net.sf.javaml.*;
 import net.sf.javaml.classification.Classifier;
-
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
@@ -18,7 +20,7 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 
 public class QuestionRanker
 {
-
+	SolrServer solr;
 	Classifier C;
 	 HashMap<Long, ArrayList<Double>> userInfo = new HashMap<Long, ArrayList<Double>>();
 	 HashMap<String, ArrayList<Double>> userNameInfo = new HashMap<String, ArrayList<Double>>();
@@ -59,9 +61,26 @@ public class QuestionRanker
 		
 	}
 
-	public HashMap<String, ArrayList<SolrDocument>>load_training_data(String training_file)
+	public HashMap<String, ArrayList<SolrDocument>>load_training_data(String training_file) throws IOException, SolrServerException
 	{	
-		return null;	
+		HashMap<String, ArrayList<SolrDocument>> training_data = new HashMap<String, ArrayList<SolrDocument>>();
+		
+		for (String line : Files.readAllLines(Paths.get(training_file))) {
+			String [] splits = line.split("\t");
+			String q_id = splits[0];
+			ArrayList<SolrDocument> solr_doclist = new ArrayList<SolrDocument>();
+			for(int j=1;j<splits.length;j++)
+			{
+				ModifiableSolrParams params = new ModifiableSolrParams();
+				params.set("qt", "/select");
+				params.set("q", "Id:"+splits[j]);
+				params.set("rows", "1");
+				QueryResponse response = this.solr.query(params);
+				solr_doclist.add(response.getResults().get(0));
+			}
+			training_data.put(q_id, solr_doclist);
+		}
+		return training_data;
 	}
 	
 	public ArrayList<Double> extract_features(SolrDocument doc)
