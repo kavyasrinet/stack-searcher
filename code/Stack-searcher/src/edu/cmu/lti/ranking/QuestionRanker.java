@@ -172,11 +172,13 @@ public class QuestionRanker
 	{
 		/*
 		 * Features are:
-		 * 1. SDM score for (query,doc)
-		 * 	  unigram, bigram, trigram
-		 * 	  ordered match & ngram proximity
+		 * SDM score for (query,doc)
+		 * 1. unigram
+		 * 2. bigram (exact match) 
+		 * 3. bigram (proximity score)
+		 * 4. trigram (exact match)
+		 * 5. trigram (proximity score)
 		 */
-		ArrayList<Double> feats = new ArrayList<Double>();
 		// Compute semantic dependency model score
 		String query_content = "";
 		String document_content = "";
@@ -188,8 +190,8 @@ public class QuestionRanker
 			document_content += result.getFieldValue("Title");
 		if(result.containsKey("Body"))
 			document_content += " " + result.getFieldValue("Body");
-		feats.add(sdm_score(query_content,document_content));
-		return feats;
+		ArrayList<Double> feats_sdm = sdm_score(query_content,document_content);
+		return feats_sdm;
 	}
 	
 
@@ -233,12 +235,7 @@ public class QuestionRanker
 		return overlap_score;
 	}
 	
-	public Double sdm_score(String query_raw, String document_raw) {
-		Double unigramScore;
-		Double bigramOScore;
-		Double bigramUScore;
-		Double trigramOScore;
-		Double trigramUScore;
+	public ArrayList<Double> sdm_score(String query_raw, String document_raw) {
 		// default weights
 		Double unigramWeight = 0.1; 
 		Double bigramOWeight = 0.2;
@@ -247,27 +244,33 @@ public class QuestionRanker
 		Double trigramUWeight = 0.1;
 		int w = 8; // default window for unordered computation. 
 		
+		ArrayList<Double> feats_sdm = new ArrayList<Double>();
+		
 		String query = (query_raw).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
 		String document = (document_raw).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
 		
 		// compute similarity for unigrams
 		ArrayList<String> unigramsQ = (ArrayList<String>) Arrays.asList((query).split("\\s+"));
 		if (unigramsQ == null) {
-			return null;
+			feats_sdm.add(null);
 		} else {
 			Set<String> uniqueUnigramsQ = new HashSet<String>(unigramsQ); 
 			ArrayList<String> unigramsD = (ArrayList<String>) Arrays.asList((document).split("\\s+"));
-			unigramScore = overlap_countO(uniqueUnigramsQ,unigramsD);
+			Double unigramScore = overlap_countO(uniqueUnigramsQ,unigramsD);
+			feats_sdm.add(unigramWeight*unigramScore);
 		}
 		// compute similarity for bigrams
 		ArrayList<String> bigramsQ = GenerateQuery.getNGrams(query, 2);
 		if (bigramsQ == null) {
-			return null;
+			// null for bigram ordered & unordered
+			feats_sdm.add(null);
+			feats_sdm.add(null);
 		} else {
 			// exact 'ordered' match
 			Set<String> uniqueBigramsQ = new HashSet<String>(bigramsQ);
 			ArrayList<String> bigramsD = GenerateQuery.getNGrams(document, 2);
-			bigramOScore = overlap_countO(uniqueBigramsQ,bigramsD);
+			Double bigramOScore = overlap_countO(uniqueBigramsQ,bigramsD);
+			feats_sdm.add(bigramOWeight*bigramOScore);
 			
 			// 'unordered' match within window (default w = 8)
 			ArrayList<String> windowDBi = GenerateQuery.getNGrams(document, w);
@@ -277,17 +280,21 @@ public class QuestionRanker
 				Set<String> currSet = new HashSet<String>(Arrays.asList(windowTerms)); 
 				windowSetDBi.add(currSet);
 			}
-			bigramUScore = overlap_countU(uniqueBigramsQ,windowSetDBi,2);
+			Double bigramUScore = overlap_countU(uniqueBigramsQ,windowSetDBi,2);
+			feats_sdm.add(bigramUWeight*bigramUScore);
 		}
 		// compute similarity for trigrams
 		ArrayList<String> trigramsQ = GenerateQuery.getNGrams(query, 3);
 		if (trigramsQ == null) {
-			return null;
+			// null for trigram ordered & unordered
+			feats_sdm.add(null);
+			feats_sdm.add(null);
 		} else {
 			// exact 'ordered' match
 			Set<String> uniqueTrigramsQ = new HashSet<String>(trigramsQ);
 			ArrayList<String> TrigramsD = GenerateQuery.getNGrams(document, 3);
-			trigramOScore = overlap_countO(uniqueTrigramsQ,TrigramsD);
+			Double trigramOScore = overlap_countO(uniqueTrigramsQ,TrigramsD);
+			feats_sdm.add(trigramOWeight*trigramOScore);
 			
 			// 'unordered' match within window (default w = 8)
 			ArrayList<String> windowDTri = GenerateQuery.getNGrams(document, w);
@@ -297,13 +304,10 @@ public class QuestionRanker
 				Set<String> currSet = new HashSet<String>(Arrays.asList(windowTerms)); 
 				windowSetDTri.add(currSet);
 			}
-			trigramUScore = overlap_countU(uniqueTrigramsQ,windowSetDTri,3);
+			Double trigramUScore = overlap_countU(uniqueTrigramsQ,windowSetDTri,3);
+			feats_sdm.add(trigramUWeight*trigramUScore);
 		}
-		return ((unigramWeight*unigramScore) + 
-				(bigramOWeight*bigramOScore) + 
-				(bigramUWeight*bigramUScore) + 
-				(trigramOWeight*trigramOScore) + 
-				(trigramUWeight*trigramUScore));
+		return feats_sdm;
 		
 	}
 	
