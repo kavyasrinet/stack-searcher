@@ -48,7 +48,7 @@ import edu.stanford.nlp.util.ArrayUtils;
 public class QuestionRanker
 {
 	SolrServer solr;
-	Logistic l;
+	Classifier l;
 	 HashMap<Long, ArrayList<Double>> userInfo = new HashMap<Long, ArrayList<Double>>();
 	 HashMap<String, ArrayList<Double>> userNameInfo = new HashMap<String, ArrayList<Double>>();
 
@@ -314,7 +314,7 @@ public class QuestionRanker
 	public void train_model(String training_file) throws Exception
 	{
 		GenerateQuery generate_query = new GenerateQuery();
-		HashMap<SolrDocument, ArrayList<SolrDocument>> training_data = QuestionRetreivalBaseline.querySolr(training_file, 100, solr, generate_query);
+		HashMap<SolrDocument, ArrayList<SolrDocument>> training_data = QuestionRetreivalBaseline.querySolr(training_file, 25, solr, generate_query);
 		HashMap<String, Set<String>> goldset = new HashMap<String, Set<String>>();
 		for (String line : Files.readAllLines(Paths.get(training_file))) {
 			String[] splits = line.trim().split("\t");
@@ -365,7 +365,7 @@ public class QuestionRanker
 			}
 		}
 		
-		l = new Logistic();
+		l = new SMO();
 		l.buildClassifier(weka_data);
 	}
 	
@@ -385,6 +385,7 @@ public class QuestionRanker
 				double[] feats = ArrayUtils.toPrimitive(result_feats.toArray(new Double[result_feats.size()]));
 				Instance i = new Instance(0, feats);
 				double[] score = l.distributionForInstance(i);
+				System.out.println(score[1]);
 				result_score.put(result, score[1]);
 			}
 				Collections.sort(results, new Comparator<SolrDocument>() {
