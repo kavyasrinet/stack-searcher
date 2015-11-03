@@ -97,8 +97,7 @@ public class QuestionRanker
     	    }
 	}
 	
-	public ArrayList<Double> extract_features(SolrDocument doc)
-	{
+	public ArrayList<Double> extract_features(SolrDocument doc) {
 		/*
 		 * Features are:
 		 * 1. Score
@@ -111,7 +110,6 @@ public class QuestionRanker
 		 * 8. User's #views
 		 * 9. User's Upvotes
 		 * 10. User's Downvotes
-		 * 11. SDM score for (query,doc)
 		 */
 		ArrayList<Double> feats = new ArrayList<Double>();
 		ArrayList<Double> nones = new ArrayList<Double>();
@@ -120,6 +118,7 @@ public class QuestionRanker
 		nones.add(null);
 		nones.add(null);
 		if(((ArrayList<Long>) doc.getFieldValue("PostTypeId")).get(0)==1){
+			
 			if(doc.containsKey("Score"))
 				feats.add((double)((ArrayList<Long>) doc.getFieldValue("Score")).get(0));
 			else
@@ -140,10 +139,11 @@ public class QuestionRanker
 				feats.add((double)((ArrayList<Long>)doc.getFieldValue("FavoriteCount")).get(0));
 			else
 				feats.add(null);
+			
 			if(doc.getFieldValue("AcceptedAnswerId")!=null)
 				feats.add(1.0);
 			else
-				feats.add(null);
+				feats.add(0.0);
 
 			if(doc.getFieldValue("score")!=null)
 				feats.add((double)((ArrayList<Long>) doc.getFieldValue("score")).get(0));
@@ -164,7 +164,9 @@ public class QuestionRanker
 				}
 				else
 					feats.addAll(nones);
+				
 			}				
+
 		}
 		return feats;
 	}

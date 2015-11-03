@@ -119,12 +119,21 @@ public class QuestionRetreivalBaseline {
          */
 
        
-//        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
-//        HashMap<String,Double> map = TfidfTerms.top_terms(2, 10, postId);
-//        ArrayList<String> res = doc_attributes.get(postId);
+        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
+        HashMap<String,Double> map = TfidfTerms.top_terms(2, 5, postId);
+//        for (String s:map.keySet()) {
+//        	System.out.println(s);
+//        }
+        ArrayList<String> res = doc_attributes.get(postId);
 //        query = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
 
+//        query = title;
+//        for (String s:map.keySet()) {
+//        	query = query + " " + s;
+//        }
         
+//        System.out.println(res.get(0));
+//        System.out.println(res.get(1));
       //    query = e.getRequestUsingBigrams(title+" "+body, map);
       //   query = e.getKeywords(title, stopwords);
        // query = title+ " "+e.getPOS(title+ " "+body, stopwords);
