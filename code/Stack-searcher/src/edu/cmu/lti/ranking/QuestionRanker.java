@@ -48,7 +48,7 @@ import edu.stanford.nlp.util.ArrayUtils;
 public class QuestionRanker
 {
 	SolrServer solr;
-	Classifier l;
+	SMO l;
 	 HashMap<Long, ArrayList<Double>> userInfo = new HashMap<Long, ArrayList<Double>>();
 	 HashMap<String, ArrayList<Double>> userNameInfo = new HashMap<String, ArrayList<Double>>();
 
@@ -64,6 +64,7 @@ public class QuestionRanker
 	 
 	public QuestionRanker(SolrServer solr) throws MalformedURLException, SolrServerException{
 		this.solr = solr;
+		
 		SolrServer usersolr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelusers/");
 			SolrQuery solr_query = new SolrQuery("*:*");
 			solr_query.setRows(21187);  
@@ -164,9 +165,9 @@ public class QuestionRanker
 				}
 				else
 					feats.addAll(nones);
-				
+			
 			}				
-
+			
 		}
 		return feats;
 	}
@@ -316,7 +317,7 @@ public class QuestionRanker
 	public void train_model(String training_file) throws Exception
 	{
 		GenerateQuery generate_query = new GenerateQuery();
-		HashMap<SolrDocument, ArrayList<SolrDocument>> training_data = QuestionRetreivalBaseline.querySolr(training_file, 25, solr, generate_query);
+		HashMap<SolrDocument, ArrayList<SolrDocument>> training_data = QuestionRetreivalBaseline.querySolr(training_file, 100, solr, generate_query);
 		HashMap<String, Set<String>> goldset = new HashMap<String, Set<String>>();
 		for (String line : Files.readAllLines(Paths.get(training_file))) {
 			String[] splits = line.trim().split("\t");
@@ -325,49 +326,67 @@ public class QuestionRanker
 				s.add(splits[i]);
 			goldset.put(splits[0],s);
 		}
-		Dataset data = new DefaultDataset();
 		Instances weka_data = null;
-
 		for(Map.Entry<SolrDocument, ArrayList<SolrDocument>> entry : training_data.entrySet())
 		{
 			ArrayList<Double> query_feats = extract_features(entry.getKey());
 			String query_id = String.valueOf(((ArrayList<Long>)  entry.getKey().getFieldValue("Id")).get(0));
 			Instance i;
-
+			ArrayList<double[]> pos_data = new ArrayList<double[]>();
+			ArrayList<double[]> neg_data = new ArrayList<double[]>();
 			for(SolrDocument result : entry.getValue())
 			{
 				String result_id = String.valueOf(((ArrayList<Long>)  result.getFieldValue("Id")).get(0));
 				ArrayList<Double> result_feats = extract_features(result);
-				result_feats.addAll(query_feats);
+				//result_feats.addAll(query_feats);
 				result_feats.addAll(extract_features_pairwise(entry.getKey(), result));
 				
 				double[] feats = ArrayUtils.toPrimitive(result_feats.toArray(new Double[result_feats.size()]));
-				i = new Instance(1.0, feats);
-									
-				
+				if(goldset.get(query_id).contains(result_id))
+					pos_data.add(feats);
+				else
+					neg_data.add(feats);
 				if(weka_data == null)
 				{
 					FastVector atts = new FastVector();
-					for(int feat_no = 0;feat_no < result_feats.size()-1;feat_no++)
+					for(int feat_no = 0;feat_no < feats.length-1;feat_no++)
 						atts.addElement(new Attribute("attribute " + String.valueOf(feat_no)));
 					FastVector classes = new FastVector();
 					classes.addElement("1");
 					classes.addElement("-1");
 					atts.addElement(new Attribute("class",classes));
-			        weka_data = new Instances("stack-searcher", atts, 25*goldset.size());
-			        weka_data.setClassIndex(weka_data.numAttributes() - 1);
+					weka_data = new Instances("stack-searcher", atts, 25*goldset.size());			        
+			        weka_data.setClassIndex(weka_data.numAttributes()-1);
 				}
-				
-				i.setDataset(weka_data);
-				if(goldset.get(query_id).contains(result_id))
-					i.setClassValue("1");					
-				else
-					i.setClassValue("-1");	
-				weka_data.add(i);
 			}
+			
+			for(int p=0;p<pos_data.size();p++)
+			{
+				double[] pos = pos_data.get(p); 
+				for(int q=0;q<neg_data.size();q++)
+				{
+					double[] neg = neg_data.get(q);
+					double[] pos_add = new double[neg_data.get(0).length+1];
+					double[] neg_add = new double[neg_data.get(0).length+1];
+					Instance neg_instance = new Instance(neg.length);
+					Instance pos_instance = new Instance(neg.length);
+					pos_instance.setDataset(weka_data);
+					neg_instance.setDataset(weka_data);
+					for(int r=0;r<neg.length;r++)
+					{
+						neg_instance.setValue(r, neg[r] - pos[r]);
+						pos_instance.setValue(r, pos[r] - neg[r]);						
+					}
+					pos_instance.setClassValue("1");
+					neg_instance.setClassValue("-1");
+					weka_data.add(pos_instance);
+					weka_data.add(neg_instance);
+				}
+			}		
 		}
-		
+			
 		l = new SMO();
+		l.setBuildLogisticModels(true);
 		l.buildClassifier(weka_data);
 	}
 	
@@ -382,13 +401,16 @@ public class QuestionRanker
 			for( SolrDocument result: results  )
 			{
 				ArrayList<Double> result_feats = extract_features(result);
-				result_feats.addAll(query_feats);
+				//result_feats.addAll(query_feats);
 				result_feats.addAll(extract_features_pairwise(query, result));
 				double[] feats = ArrayUtils.toPrimitive(result_feats.toArray(new Double[result_feats.size()]));
-				Instance i = new Instance(0, feats);
+				Instance i = new Instance(feats.length);
+				for(int attIndex = 0; attIndex < feats.length; attIndex++)
+				{
+					i.setValue(attIndex, feats[attIndex]);
+				}
 				double[] score = l.distributionForInstance(i);
-				System.out.println(score[1]);
-				result_score.put(result, score[1]);
+				result_score.put(result, score[1] );
 			}
 				Collections.sort(results, new Comparator<SolrDocument>() {
 				    @Override
@@ -411,6 +433,4 @@ public class QuestionRanker
 		}
 		return features;
 	}
-	
-
 }

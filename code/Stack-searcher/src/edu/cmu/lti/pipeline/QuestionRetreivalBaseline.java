@@ -33,13 +33,14 @@ public class QuestionRetreivalBaseline {
 	
 	public static void main(String[] args) throws Exception {
    
-
+				
     	GenerateQuery generate_query = new GenerateQuery();
 
 		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
-    	QuestionRanker ranker = new QuestionRanker(solr);
 
+    	QuestionRanker ranker = new QuestionRanker(solr);
     	ranker.train_model( "dataset_sample/train.txt");
+
 
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
@@ -49,15 +50,16 @@ public class QuestionRetreivalBaseline {
     		stopwords.add(line);
     	}
     	
+    	
     	String query_file = "dataset_sample/val.txt";
 
-    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
-    //	ArrayList<ArrayList<Double>> feats = ranker.getFeaturesFromPosts(docs);
-
-   		//predicted_results = rerank_results(predicted_results);
-    	HashMap<SolrDocument, ArrayList<SolrDocument>> reranked_docs = ranker.rerank(docs);
     	
-    	HashMap<String, ArrayList<String>> predicted_results = retreivedIds(reranked_docs);
+    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
+    	
+    	docs = ranker.rerank(docs);
+    	
+    	System.out.println("Evaluating\n");
+    	HashMap<String, ArrayList<String>> predicted_results = retreivedIds(docs);
     	Evaluate evaluator = new Evaluate(query_file);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
@@ -219,7 +221,7 @@ public class QuestionRetreivalBaseline {
     			
         		ArrayList<RetrievalResult> results = new ArrayList<>();
 	        	
-	        	String query = generateQuery(qid, solr, generate_query);
+	        	String query = "PostTypeId=1 " + generateQuery(qid, solr, generate_query);
 	            ArrayList<SolrDocument> list = new ArrayList<SolrDocument>();
 	    	    params = new ModifiableSolrParams();
 	    	    params.set("qt", "/select");
