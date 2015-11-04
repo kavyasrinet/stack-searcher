@@ -54,7 +54,7 @@ public class QuestionRetreivalBaseline {
     	String query_file = "dataset_sample/val.txt";
 
     	
-    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,10, solr, generate_query);
+    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
     	
     	docs = ranker.rerank(docs);
     	
