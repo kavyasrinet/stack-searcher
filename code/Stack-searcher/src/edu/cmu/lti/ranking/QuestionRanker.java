@@ -253,12 +253,23 @@ public class QuestionRanker
 		String document = (document_raw).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
 		
 		// compute similarity for unigrams
-		ArrayList<String> unigramsQ = (ArrayList<String>) Arrays.asList((query).split("\\s+"));
-		if (unigramsQ == null) {
+		System.out.println(query);
+		List<String> ugQ = Arrays.asList((query).split("\\s+"));
+		ArrayList<String> unigramsQ = new ArrayList<String>();
+		for (String u: ugQ) {
+			unigramsQ.add(u);
+		}
+//		ArrayList<String> unigramsQ = (ArrayList<String>) Arrays.asList((query).split("\\s+"));
+		if (unigramsQ.size() == 0) {
 			feats_sdm.add(null);
 		} else {
 			Set<String> uniqueUnigramsQ = new HashSet<String>(unigramsQ); 
-			ArrayList<String> unigramsD = (ArrayList<String>) Arrays.asList((document).split("\\s+"));
+//			ArrayList<String> unigramsD = (ArrayList<String>) Arrays.asList((document).split("\\s+"));
+			List<String> ugD = Arrays.asList((document).split("\\s+"));
+			ArrayList<String> unigramsD = new ArrayList<String>();
+			for (String u: ugD) {
+				unigramsQ.add(u);
+			}
 			Double unigramScore = overlap_countO(uniqueUnigramsQ,unigramsD);
 			feats_sdm.add(unigramWeight*unigramScore);
 		}
