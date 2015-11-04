@@ -54,7 +54,7 @@ public class QuestionRetreivalBaseline {
     	String query_file = "dataset_sample/val.txt";
 
     	
-    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
+    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,10, solr, generate_query);
     	
     	docs = ranker.rerank(docs);
     	
@@ -121,12 +121,12 @@ public class QuestionRetreivalBaseline {
          */
 
        
-        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
-        HashMap<String,Double> map = TfidfTerms.top_terms(2, 5, postId);
+//        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
+//        HashMap<String,Double> map = TfidfTerms.top_terms(2, 5, postId);
 //        for (String s:map.keySet()) {
 //        	System.out.println(s);
 //        }
-        ArrayList<String> res = doc_attributes.get(postId);
+//        ArrayList<String> res = doc_attributes.get(postId);
 //        query = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
 
 //        query = title;

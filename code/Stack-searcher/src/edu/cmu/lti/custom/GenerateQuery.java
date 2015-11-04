@@ -48,20 +48,20 @@ public class GenerateQuery {
     			}
     				
     		}
-//    		else{
-//    			String[] parts = s.split("\\s+");
-//    			int l = terms.size();
-//    			if(terms.size()>0 && terms.get(l-1).equals(parts[0])){
-//    				terms.remove(l-1);	
-//    			}
-//    			else{
-//    				result=  result + " "+parts[0];
-//    				terms.add(parts[0]);
-//    			}
-//    				
-//    			result = result+" " +parts[1]+ " ";
-//    			terms.add(parts[1]);
-//    		}
+    		else{
+    			String[] parts = s.split("\\s+");
+    			int l = terms.size();
+    			if(terms.size()>0 && terms.get(l-1).equals(parts[0])){
+    				terms.remove(l-1);	
+    			}
+    			else{
+    				result=  result + " "+parts[0];
+    				terms.add(parts[0]);
+    			}
+    				
+    			result = result+" " +parts[1]+ " ";
+    			terms.add(parts[1]);
+    		}
     	}
     	return result.trim();
     }
