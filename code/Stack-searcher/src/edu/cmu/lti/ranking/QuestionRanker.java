@@ -7,13 +7,15 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
 
 import net.sf.javaml.*;
 import net.sf.javaml.classification.evaluation.CrossValidation;
@@ -21,16 +23,16 @@ import net.sf.javaml.classification.evaluation.PerformanceMeasure;
 import net.sf.javaml.core.Dataset;
 import net.sf.javaml.core.DefaultDataset;
 import net.sf.javaml.tools.weka.WekaClassifier;
-import net.sf.javaml.*;
+
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
+
+import edu.cmu.lti.custom.GenerateQuery;
 
 import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
@@ -94,19 +96,16 @@ public class QuestionRanker
     	    	userInfo.put(Id, info);
     	    	userNameInfo.put(name, info);
     	    }
-		    
-		
 	}
 	
-	public ArrayList<Double> extract_features(SolrDocument doc)
-	{
+	public ArrayList<Double> extract_features(SolrDocument doc) {
 		/*
 		 * Features are:
 		 * 1. Score
 		 * 2. ViewCount
 		 * 3. AnswerCount
-		 * 4. Favorite Count
-		 * 5. Comment Count
+		 * 4. Comment Count
+		 * 5. Favorite Count
 		 * 6. AcceptedAnswerId - binary
 		 * 7. User's reputation
 		 * 8. User's #views
@@ -120,7 +119,6 @@ public class QuestionRanker
 		nones.add(null);
 		nones.add(null);
 		if(((ArrayList<Long>) doc.getFieldValue("PostTypeId")).get(0)==1){
-			
 			
 			if(doc.containsKey("Score"))
 				feats.add((double)((ArrayList<Long>) doc.getFieldValue("Score")).get(0));
@@ -175,8 +173,153 @@ public class QuestionRanker
 	}
 	public ArrayList<Double> extract_features_pairwise(SolrDocument query, SolrDocument result)
 	{
-		ArrayList<Double> feats = new ArrayList<Double>();
-		return feats;
+		/*
+		 * Features are:
+		 * SDM score for (query,doc)
+		 * 1. unigram
+		 * 2. bigram (exact match) 
+		 * 3. bigram (proximity score)
+		 * 4. trigram (exact match)
+		 * 5. trigram (proximity score)
+		 */
+		// Compute semantic dependency model score
+		String query_content = "";
+		String document_content = "";
+		if(query.containsKey("Title"))
+			query_content += query.getFieldValue("Title");
+		if(query.containsKey("Body"))
+			query_content += " " + query.getFieldValue("Body");
+		if(result.containsKey("Title"))
+			document_content += result.getFieldValue("Title");
+		if(result.containsKey("Body"))
+			document_content += " " + result.getFieldValue("Body");
+		ArrayList<Double> feats_sdm = sdm_score(query_content,document_content);
+		return feats_sdm;
+	}
+	
+
+	public Double overlap_countO(Set<String> src, ArrayList<String> tar) {
+		Double overlap_score = 0.0;
+		HashMap<String,Double> tarCount = new HashMap<String,Double>();
+		for (String s: tar) {
+			if (tarCount.get(s) != null) {
+				tarCount.put(s, tarCount.get(s)+1.0);
+			} else {
+				tarCount.put(s, 1.0);
+			}
+		}
+		for (String s: src) {
+			if (tarCount.get(s) != null) {
+				overlap_score += tarCount.get(s);
+			} 
+		}
+		return overlap_score;
+	}
+	
+	// Currently written exclusively for bigram.trigram ie n=2,3
+	public Double overlap_countU(Set<String> src, ArrayList<Set<String>> tar, int n) {
+		Double overlap_score = 0.0;
+		String q1 = "";
+		String q2 = "";
+		String q3 = "";
+		for (String b: src) {
+			String[] ngram = b.split("\\s+");
+			q1 = ngram[0];
+			q2 = ngram[1];
+			if (n > 2) {
+				q3 = ngram[2];
+			}
+			for (Set<String> win: tar) {
+				if (win.contains(q1) & win.contains(q2) & (n < 3 | win.contains(q3))) {
+					overlap_score += 1.0;
+				}
+			}
+		}
+		return overlap_score;
+	}
+	
+	public ArrayList<Double> sdm_score(String query_raw, String document_raw) {
+		// default weights
+//		Double unigramWeight = 0.1; 
+//		Double bigramOWeight = 0.2;
+//		Double bigramUWeight = 0.1; 
+//		Double trigramOWeight = 0.8;
+//		Double trigramUWeight = 0.1;
+		int w = 8; // default window for unordered computation. 
+		
+		ArrayList<Double> feats_sdm = new ArrayList<Double>();
+		
+		String query = (query_raw).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
+		String document = (document_raw).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
+		
+		// compute similarity for unigrams
+		List<String> ugQ = Arrays.asList((query).split("\\s+"));
+		ArrayList<String> unigramsQ = new ArrayList<String>();
+		for (String u: ugQ) {
+			unigramsQ.add(u);
+		}
+		if (unigramsQ.size() == 0) {
+			feats_sdm.add(null);
+		} else {
+			Set<String> uniqueUnigramsQ = new HashSet<String>(unigramsQ); 
+			List<String> ugD = Arrays.asList((document).split("\\s+"));
+			ArrayList<String> unigramsD = new ArrayList<String>();
+			for (String u: ugD) {
+				unigramsD.add(u);
+			}
+			Double unigramScore = overlap_countO(uniqueUnigramsQ,unigramsD);
+			feats_sdm.add(unigramScore);
+		}
+		// compute similarity for bigrams
+		ArrayList<String> bigramsQ = GenerateQuery.getNGrams(query, 2);
+		if (bigramsQ == null) {
+			// null for bigram ordered & unordered
+			feats_sdm.add(null);
+			feats_sdm.add(null);
+		} else {
+			// exact 'ordered' match
+			Set<String> uniqueBigramsQ = new HashSet<String>(bigramsQ);
+			ArrayList<String> bigramsD = GenerateQuery.getNGrams(document, 2);
+			Double bigramOScore = overlap_countO(uniqueBigramsQ,bigramsD);
+			feats_sdm.add(bigramOScore);
+			
+			// 'unordered' match within window (default w = 8)
+			ArrayList<String> windowDBi = GenerateQuery.getNGrams(document, w);
+			ArrayList<Set<String>> windowSetDBi = new ArrayList<Set<String>>();
+			for (String window: windowDBi) {
+				String[] windowTerms = window.split("\\s+");
+				Set<String> currSet = new HashSet<String>(Arrays.asList(windowTerms)); 
+				windowSetDBi.add(currSet);
+			}
+			Double bigramUScore = overlap_countU(uniqueBigramsQ,windowSetDBi,2);
+			feats_sdm.add(bigramUScore);
+		}
+		// compute similarity for trigrams
+		ArrayList<String> trigramsQ = GenerateQuery.getNGrams(query, 3);
+		if (trigramsQ == null) {
+			// null for trigram ordered & unordered
+			feats_sdm.add(null);
+			feats_sdm.add(null);
+		} else {
+			// exact 'ordered' match
+			Set<String> uniqueTrigramsQ = new HashSet<String>(trigramsQ);
+			ArrayList<String> TrigramsD = GenerateQuery.getNGrams(document, 3);
+			Double trigramOScore = overlap_countO(uniqueTrigramsQ,TrigramsD);
+			feats_sdm.add(trigramOScore);
+			
+			// 'unordered' match within window (default w = 8)
+			ArrayList<String> windowDTri = GenerateQuery.getNGrams(document, w);
+			ArrayList<Set<String>> windowSetDTri = new ArrayList<Set<String>>();
+			for (String window: windowDTri) {
+				String[] windowTerms = window.split("\\s+");
+				Set<String> currSet = new HashSet<String>(Arrays.asList(windowTerms)); 
+				windowSetDTri.add(currSet);
+			}
+			Double trigramUScore = overlap_countU(uniqueTrigramsQ,windowSetDTri,3);
+			feats_sdm.add(trigramUScore);
+		}
+		return feats_sdm;
+		
 	}
 	
 	public void train_model(String training_file) throws Exception
@@ -289,7 +432,7 @@ public class QuestionRanker
 		return output;	
 	}
 	
-	public ArrayList<ArrayList<Double>> getAllFeatures(HashMap<String, ArrayList<SolrDocument>> mapResults){
+	public ArrayList<ArrayList<Double>> getFeaturesFromPosts(HashMap<String, ArrayList<SolrDocument>> mapResults, SolrDocument query){
 		ArrayList<ArrayList<Double>> features = new ArrayList<ArrayList<Double>>();
 		for(String id: mapResults.keySet()){
 			for(SolrDocument doc: mapResults.get(id)){
