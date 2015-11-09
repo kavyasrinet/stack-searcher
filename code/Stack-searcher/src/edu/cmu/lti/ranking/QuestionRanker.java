@@ -422,8 +422,7 @@ public class QuestionRanker
 				{
 					i.setValue(attIndex, feats[attIndex]);
 				}
-				double[] score = l.distributionForInstance(i);
-				System.out.println(score[1]);
+				double[] score = l.distributionForInstance(i);				
 				result_score.put(result, score[1] );
 			}
 				Collections.sort(results, new Comparator<SolrDocument>() {
