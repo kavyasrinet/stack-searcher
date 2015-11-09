@@ -215,6 +215,7 @@ public class QuestionRetreivalBaseline {
 	            ArrayList<SolrDocument> list = new ArrayList<SolrDocument>();
 	    	    params = new ModifiableSolrParams();
 	    	    params.set("qt", "/select");
+	    	    params.set("fl", "*, score");
 
 	    	    String solr_query ="";
 	    	    for(String query_split : query.split(" "))

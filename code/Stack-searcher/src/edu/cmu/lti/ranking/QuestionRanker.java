@@ -15,16 +15,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.sf.javaml.*;
-import net.sf.javaml.classification.evaluation.CrossValidation;
-import net.sf.javaml.classification.evaluation.PerformanceMeasure;
-import net.sf.javaml.core.Dataset;
-import net.sf.javaml.core.DefaultDataset;
-import net.sf.javaml.tools.weka.WekaClassifier;
-import net.sf.javaml.*;
+
+
+
+
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
@@ -35,6 +30,8 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
 import weka.classifiers.functions.SMO;
+import weka.classifiers.functions.supportVector.Kernel;
+import weka.classifiers.functions.supportVector.RBFKernel;
 import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
@@ -46,7 +43,7 @@ import edu.stanford.nlp.util.ArrayUtils;
 public class QuestionRanker
 {
 	SolrServer solr;
-	SMO l;
+	Logistic l;
 	 HashMap<Long, ArrayList<Double>> userInfo = new HashMap<Long, ArrayList<Double>>();
 	 HashMap<String, ArrayList<Double>> userNameInfo = new HashMap<String, ArrayList<Double>>();
 
@@ -119,27 +116,37 @@ public class QuestionRanker
 		nones.add(null);
 		nones.add(null);
 		nones.add(null);
-		if(((ArrayList<Long>) doc.getFieldValue("PostTypeId")).get(0)==1){
+		HashMap<String, String> post_fields = new HashMap<String, String>();
+		for (String field: doc.getFieldNames())
+		{
+			if(field.equals("score"))
+				post_fields.put(field,(doc.getFieldValue(field)).toString());
+			else if((!field.equals("id")) && (!field.equals("_version_")))
+				post_fields.put(field,((ArrayList)doc.getFieldValue(field)).get(0).toString());
+		}
+		
+		if(post_fields.get("PostTypeId").equals("1")){
 			
 			
 			if(doc.containsKey("Score"))
-				feats.add((double)((ArrayList<Long>) doc.getFieldValue("Score")).get(0));
+				feats.add(Double.parseDouble(post_fields.get("Score")));
 			else
 				feats.add(null);
+			
 			if(doc.containsKey("ViewCount"))
-				feats.add((double)((ArrayList<Long>) doc.getFieldValue("ViewCount")).get(0));
+				feats.add(Double.parseDouble(post_fields.get("ViewCount")));
 			else
 				feats.add(null);
 			if(doc.containsKey("AnswerCount"))
-				feats.add((double)((ArrayList<Long>) doc.getFieldValue("AnswerCount")).get(0));
+				feats.add(Double.parseDouble(post_fields.get("AnswerCount")));
 			else
 				feats.add(null);
 			if(doc.containsKey("CommentCount"))
-				feats.add((double)((ArrayList<Long>) doc.getFieldValue("CommentCount")).get(0));
+				feats.add(Double.parseDouble(post_fields.get("CommentCount")));
 			else
 				feats.add(null);
 			if(doc.containsKey("FavoriteCount"))
-				feats.add((double)((ArrayList<Long>)doc.getFieldValue("FavoriteCount")).get(0));
+				feats.add(Double.parseDouble(post_fields.get("FavoriteCount")));
 			else
 				feats.add(null);
 			
@@ -149,12 +156,12 @@ public class QuestionRanker
 				feats.add(0.0);
 
 			if(doc.getFieldValue("score")!=null)
-				feats.add((double)((ArrayList<Long>) doc.getFieldValue("score")).get(0));
+				feats.add(Double.parseDouble(post_fields.get("score")));
 			else
 				feats.add(0.0);
 			
 			if(doc.containsKey("OwnerUserId")){
-				long Id = ((ArrayList<Long>) doc.getFieldValue("OwnerUserId")).get(0);
+				long Id = Long.parseLong(post_fields.get("OwnerUserId"));
 				feats.addAll(userInfo.get(Id));
 			}
 			else{
@@ -250,9 +257,10 @@ public class QuestionRanker
 			}		
 		}
 			
-		l = new SMO();
-		l.setBuildLogisticModels(true);
+		l = new Logistic();
+		//l.setBuildLogisticModels(true);
 		l.buildClassifier(weka_data);
+		System.out.print(l);
 	}
 	
 	public HashMap<SolrDocument, ArrayList<SolrDocument>>rerank(HashMap<SolrDocument, ArrayList<SolrDocument>> predicted_results) throws Exception
@@ -275,6 +283,7 @@ public class QuestionRanker
 					i.setValue(attIndex, feats[attIndex]);
 				}
 				double[] score = l.distributionForInstance(i);
+				System.out.println(score[1]);
 				result_score.put(result, score[1] );
 			}
 				Collections.sort(results, new Comparator<SolrDocument>() {
@@ -285,7 +294,7 @@ public class QuestionRanker
 				});		
 			output.put(query, results);
 		}
-		
+		System.out.println(l);
 		return output;	
 	}
 	
