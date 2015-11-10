@@ -27,10 +27,12 @@ Sample dataset: https://github.com/Digo/stack-searcher/blob/master/dataset_sampl
 
 Next Steps
 ---
-* Data collection reader
-* Find questions that marked as duplicated or answers contains a link for another question
-* Extract and format data tuples (input question, [relevant questions]) 
-* Split data tuples into train, validate, test datasets
-* Search evaluation MAP, MRR, Recall@10 
-* Develop and evaluate new dynamic keywords selection and expansion methods
-* Develop and evaluate new relevant function based on word embedding
+* [x] Data collection reader
+* [x] Find questions that marked as duplicated or answers contains a link for another question
+* [x] Extract and format data tuples (input question, [relevant questions]) 
+* [x] Split data tuples into train, validate, test datasets
+* [x] Search evaluation MAP, MRR, Recall@10 
+* [ ] Develop and evaluate new dynamic keywords selection and expansion methods
+  * [ ] Build feedback loop between keyword generation and MAP/Recall@N  
+* [ ] Develop and evaluate new relevant function based on word embedding
+  * [ ] Learn about document distance in vector space e.g Word Mover's Distance
