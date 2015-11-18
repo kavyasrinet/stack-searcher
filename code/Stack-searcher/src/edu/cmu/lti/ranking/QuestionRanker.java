@@ -24,9 +24,7 @@ import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
-
 import edu.cmu.lti.custom.GenerateQuery;
-
 import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
 import weka.classifiers.functions.SMO;
@@ -84,9 +82,9 @@ public class QuestionRanker
     	    		info.add((double)((ArrayList<Long>) doc.getFieldValue("UpVotes")).get(0));
     	    	else
     	    		info.add(null);
-    	    	if(doc.containsKey("DownVotes"))
-    	    		info.add((double)((ArrayList<Long>) doc.getFieldValue("DownVotes")).get(0));
-    	    	else
+//    	    	if(doc.containsKey("DownVotes"))
+//    	    		info.add((double)((ArrayList<Long>) doc.getFieldValue("DownVotes")).get(0));
+//    	    	else
     	    		info.add(null);
     	    	userInfo.put(Id, info);
     	    	userNameInfo.put(name, info);
@@ -102,10 +100,11 @@ public class QuestionRanker
 		 * 4. Comment Count
 		 * 5. Favorite Count
 		 * 6. AcceptedAnswerId - binary
-		 * 7. User's reputation
-		 * 8. User's #views
-		 * 9. User's Upvotes
-		 * 10. User's Downvotes
+		 * 7. Solr score 
+		 * 8. User's reputation
+		 * 9. User's #views
+		 * 10. User's Upvotes
+		 * 11. User's Downvotes
 		 */
 		ArrayList<Double> feats = new ArrayList<Double>();
 		ArrayList<Double> nones = new ArrayList<Double>();
@@ -141,9 +140,9 @@ public class QuestionRanker
 				feats.add(Double.parseDouble(post_fields.get("CommentCount")));
 			else
 				feats.add(null);
-			if(doc.containsKey("FavoriteCount"))
-				feats.add(Double.parseDouble(post_fields.get("FavoriteCount")));
-			else
+//			if(doc.containsKey("FavoriteCount"))
+//				feats.add(Double.parseDouble(post_fields.get("FavoriteCount")));
+//			else
 				feats.add(null);
 			
 			if(doc.getFieldValue("AcceptedAnswerId")!=null)
@@ -351,7 +350,7 @@ public class QuestionRanker
 			{
 				String result_id = String.valueOf(((ArrayList<Long>)  result.getFieldValue("Id")).get(0));
 				ArrayList<Double> result_feats = extract_features(result);
-				//result_feats.addAll(query_feats);
+				result_feats.addAll(query_feats);
 				result_feats.addAll(extract_features_pairwise(entry.getKey(), result));
 				
 				double[] feats = ArrayUtils.toPrimitive(result_feats.toArray(new Double[result_feats.size()]));
@@ -414,7 +413,7 @@ public class QuestionRanker
 			for( SolrDocument result: results  )
 			{
 				ArrayList<Double> result_feats = extract_features(result);
-				//result_feats.addAll(query_feats);
+				result_feats.addAll(query_feats);
 				result_feats.addAll(extract_features_pairwise(query, result));
 				double[] feats = ArrayUtils.toPrimitive(result_feats.toArray(new Double[result_feats.size()]));
 				Instance i = new Instance(feats.length);
@@ -422,7 +421,9 @@ public class QuestionRanker
 				{
 					i.setValue(attIndex, feats[attIndex]);
 				}
-				double[] score = l.distributionForInstance(i);				
+
+				double[] score = l.distributionForInstance(i);
+
 				result_score.put(result, score[1] );
 			}
 				Collections.sort(results, new Comparator<SolrDocument>() {

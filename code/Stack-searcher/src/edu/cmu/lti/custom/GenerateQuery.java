@@ -1,9 +1,5 @@
 package edu.cmu.lti.custom;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -11,6 +7,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
+
+/**
+ * @author Kavya Srinet.
+ */
+
 
 public class GenerateQuery {
 	MaxentTagger tagger;
@@ -24,14 +25,9 @@ public class GenerateQuery {
     public static void main(String[] args) throws URISyntaxException, IOException {
     	GenerateQuery e = new GenerateQuery();
     	MaxentTagger tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
-//    	e.getPOS("Hello my name is Kavya", new HashSet<String>(), tagger);
+//    	e.getPOS("Costa Rica Puerto Rico");
 //    	e.getPOS("Hello my name is Tada", new HashSet<String>(), tagger);
     //	e.getNGrams("Hello my name is Kavya",1);
-    	HashMap<String, Double> map = new HashMap<String, Double>();
-    	map.put("Hello my", 1.0);
-    	map.put("my name",1.0);
-    	map.put("and blabla", 1.0);
-    	e.getRequestUsingBigrams("Hello my name is Kavya and blabla", map);
     }
     
     //This function generates the query based on frequent bigrams / phrases
@@ -49,24 +45,26 @@ public class GenerateQuery {
     				
     		}
     		else{
-    			String[] parts = s.split("\\s+");
-    			int l = terms.size();
-    			if(terms.size()>0 && terms.get(l-1).equals(parts[0])){
-    				terms.remove(l-1);	
-    			}
-    			else{
-    				result=  result + " "+parts[0];
-    				terms.add(parts[0]);
-    			}
-    				
-    			result = result+" " +parts[1]+ " ";
-    			terms.add(parts[1]);
+//    			String[] parts = s.split("\\s+");
+//    			int l = terms.size();
+//    			if(terms.size()>0 && terms.get(l-1).equals(parts[0])){
+//    				terms.remove(l-1);	
+//    			}
+//    			else{
+//    				result=  result + " "+parts[0];
+//    				terms.add(parts[0]);
+//    			}
+//    				
+//    			result = result+" " +parts[1]+ " ";
+//    			terms.add(parts[1]);
     		}
     	}
     	return result.trim();
     }
 
+
     public static String getKeywords(String s, HashSet<String> stopwords) throws IOException{
+
     //Remove standard stopwords 
     	s = s.toLowerCase();
     	
@@ -82,9 +80,12 @@ public class GenerateQuery {
     }
     
   //given n , this function returns back an arrayList of n-grams.
+
   //  The value of n>= 2
   public static ArrayList<String> getNGrams(String text, int n){	  
+	  text = (text).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
 	  ArrayList<String> ngrams = new ArrayList<String>();
+
 	  String[] unigrams = text.split("\\s+");
 	  int len = unigrams.length;
 	  int i=0;
@@ -110,7 +111,7 @@ public class GenerateQuery {
 	  return ngrams;
   }
     
-    public String getPOS(String title, HashSet<String> stopwords){
+    public String getPOS(String title){
 
     	String tagged = this.tagger.tagString(title);
     	String out = "";
@@ -138,7 +139,7 @@ public class GenerateQuery {
     public String appendBody(String title, String body){
     	//appends title and last sentence of body
     	String[] sentences = body.split(".");
-    	
+    	title= title + " "+sentences[0];
     	return title+ " "+sentences[sentences.length-1];
     }    
 }

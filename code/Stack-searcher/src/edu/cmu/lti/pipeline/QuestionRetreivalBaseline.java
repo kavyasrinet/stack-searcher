@@ -31,6 +31,8 @@ public class QuestionRetreivalBaseline {
 	
 	public static HashSet<String> stopwords = new HashSet<String>();
 	
+	public static HashMap<Integer, String>  write_Map = new HashMap<Integer, String>();
+	
 	public static void main(String[] args) throws Exception {
    
 				
@@ -38,8 +40,8 @@ public class QuestionRetreivalBaseline {
 
 		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 
-    	QuestionRanker ranker = new QuestionRanker(solr);
-    	ranker.train_model( "dataset_sample/train.txt");
+//  	QuestionRanker ranker = new QuestionRanker(solr);
+//  	ranker.train_model( "dataset_sample/train.txt");
 
 
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
@@ -49,17 +51,35 @@ public class QuestionRetreivalBaseline {
     		line = line.trim();
     		stopwords.add(line);
     	}
+    	reader.close();
     	
+    	BufferedReader reader1 = new BufferedReader(new FileReader(new File("dataset_sample/queries.txt")));
+    	while((line=reader1.readLine())!=null){
+    		line = line.trim();
+    		String[] terms = line.split("\t");
+    		int i=1;
+    		String query = "";
+    		while(i<terms.length){
+    			query = query+ "\""+terms[i]+"\""+" ";
+    			i = i+1;
+    		}
+    		write_Map.put(Integer.parseInt(terms[0]),query);
+    	}
+    	reader1.close();
     	
     	String query_file = "dataset_sample/val.txt";
 
     	
-    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
+    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,300, solr, generate_query);
     	
-    	docs = ranker.rerank(docs);
+//    	docs = ranker.rerank(docs);
     	
     	System.out.println("Evaluating\n");
     	HashMap<String, ArrayList<String>> predicted_results = retreivedIds(docs);
+
+    	long time = System.currentTimeMillis();
+  
+    	
     	Evaluate evaluator = new Evaluate(query_file);
     	
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
@@ -67,6 +87,8 @@ public class QuestionRetreivalBaseline {
        	System.out.println("Recall Score = " + evaluator.getRecall(predicted_results));
     	System.out.println("P@1 Score = " + evaluator.getPAtK(predicted_results,1));
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
+    
+    	
     }
     
 	public static HashMap<String, ArrayList<String>> retreivedIds(HashMap<SolrDocument, ArrayList<SolrDocument>> docs){
@@ -112,8 +134,8 @@ public class QuestionRetreivalBaseline {
       	String title = postAttb.get("Title");
         String body = postAttb.get("Body");
         String tags = postAttb.get("Tags");
-
-        query = title;
+        
+    //    query = title;
         //Use the top k bigrams containing map for the following
         /*
          * Initialize TfidfTerms and call the function to get top k bigrams
@@ -122,12 +144,12 @@ public class QuestionRetreivalBaseline {
 
        
 //        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
-//        HashMap<String,Double> map = TfidfTerms.top_terms(2, 5, postId);
-//        for (String s:map.keySet()) {
+//        HashMap<String,Double> mapTopK = TfidfTerms.top_terms(2, 20, postId);
+//        for (String s: mapTopK.keySet()) {
 //        	System.out.println(s);
 //        }
 //        ArrayList<String> res = doc_attributes.get(postId);
-//        query = gq.getRequestUsingBigrams(res.get(0)+" "+res.get(1), map);
+//        query = generate_query.getRequestUsingBigrams(res.get(0)+" "+res.get(1), mapTopK);
 
 //        query = title;
 //        for (String s:map.keySet()) {
@@ -149,7 +171,9 @@ public class QuestionRetreivalBaseline {
        // query = title+ " "+generate_query.getPOS(title+ " "+body, stopwords);
        // query = generate_query.addTags(title, tags);
         //generate_query.appendBody(title, body)
-       query = title + " " + tags; 
+  
+        //   query = title + " " + tags; 
+        query = write_Map.get(Integer.parseInt(question_id)) +" "+tags;
         return query.replaceAll("[^A-Za-z0-9 ']", " ").trim();
     }
     

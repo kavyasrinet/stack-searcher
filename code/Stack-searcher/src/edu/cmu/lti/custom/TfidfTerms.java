@@ -98,12 +98,12 @@ public class TfidfTerms {
 		doc_attributes.put(documentID, attr);
 		String full_content = title_content + " " + body_content;
 		String content = (full_content).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
-		String content_noStopwords = GenerateQuery.getKeywords(content, stopwords);
+	//	String content_noStopwords = GenerateQuery.getKeywords(content, stopwords);
 		String[] token_list = null;
 		if (n_gram == 1) {
 	    	token_list = (content).split("\\s+");
 	    } else {
-	    	ArrayList<String> ngram_list = GenerateQuery.getNGrams(content_noStopwords, n_gram);
+	    	ArrayList<String> ngram_list = GenerateQuery.getNGrams(content, n_gram);
 	    	token_list = new String[ngram_list.size()]; 
 	    	ngram_list.toArray(token_list);
 	    }
