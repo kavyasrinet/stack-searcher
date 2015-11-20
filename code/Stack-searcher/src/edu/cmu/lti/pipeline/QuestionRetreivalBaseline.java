@@ -2,6 +2,7 @@ package edu.cmu.lti.pipeline;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -30,8 +31,8 @@ import edu.cmu.lti.ranking.*;
 public class QuestionRetreivalBaseline {
 	
 	public static HashSet<String> stopwords = new HashSet<String>();
-	
 	public static HashMap<Integer, String>  write_Map = new HashMap<Integer, String>();
+	public static HashMap<String, Double> tag_Map = new HashMap<String, Double>();
 	
 	public static void main(String[] args) throws Exception {
    
@@ -52,27 +53,15 @@ public class QuestionRetreivalBaseline {
     		stopwords.add(line);
     	}
     	reader.close();
+//call this with the value of k    	
+    	readPhrases(5);
     	
-    	BufferedReader reader1 = new BufferedReader(new FileReader(new File("dataset_sample/queries.txt")));
-    	while((line=reader1.readLine())!=null){
-    		line = line.trim();
-    		String[] terms = line.split("\t");
-    		int i=1;
-    		String query = "";
-    		while(i<terms.length){
-    			query = query+ "\""+terms[i]+"\""+" ";
-    			i = i+1;
-    		}
-    		write_Map.put(Integer.parseInt(terms[0]),query);
-    	}
-    	reader1.close();
-    	
-    	String query_file = "dataset_sample/val.txt";
-
-    	
+    	String query_file = "dataset_sample/val.txt";  	
     	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,300, solr, generate_query);
     	
 //    	docs = ranker.rerank(docs);
+    	
+    	//you can call getEntropy function here to compute the entropy on the list of docs per query
     	
     	System.out.println("Evaluating\n");
     	HashMap<String, ArrayList<String>> predicted_results = retreivedIds(docs);
@@ -87,10 +76,53 @@ public class QuestionRetreivalBaseline {
        	System.out.println("Recall Score = " + evaluator.getRecall(predicted_results));
     	System.out.println("P@1 Score = " + evaluator.getPAtK(predicted_results,1));
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
-    
-    	
     }
     
+	//call this function to get top k phrases from the checked in file
+	public static void readPhrases(int k) throws NumberFormatException, IOException{
+		String line="";
+		BufferedReader reader1 = new BufferedReader(new FileReader(new File("dataset_sample/queries.txt")));
+    	while((line=reader1.readLine())!=null){
+    		line = line.trim();
+    		String[] terms = line.split("\t");
+    		int i=1;
+    		String query = "";
+    		while(i<k && i<terms.length){
+    			query = query+ "\""+terms[i]+"\""+" ";
+    			i = i+1;
+    		}
+    		write_Map.put(Integer.parseInt(terms[0]),query);
+    	}
+    	reader1.close();
+	}
+	
+	//call this fucntion with the list of documents to get entropy
+	public static double getEntropy(ArrayList<SolrDocument> docs, SolrServer solr) throws SolrServerException{
+		ArrayList<String> ids = new ArrayList<String>();    
+		for(SolrDocument doc : docs){
+			ArrayList<Long> id = (ArrayList<Long>)  doc.getFieldValue("Id");
+			ids.add(id.get(0).toString());
+		}
+		for(String docId: ids){
+			HashMap<String, String> postAttb  = get_post(docId, solr);
+			 String tags = postAttb.get("Tags");
+			 String[] tgs = tags.split(" ");
+			 for(String tag: tgs){
+				 if(tag_Map.containsKey(tag))
+					 tag_Map.put(tag, tag_Map.get(tag)+1);
+				 else
+					 tag_Map.put(tag, 1.0);
+				}
+		}
+		int total_docs = ids.size();
+		double entropy = 0.0;
+		for(String tag: tag_Map.keySet()){
+			entropy = entropy + ((tag_Map.get(tag)*1.0)/total_docs);
+		}
+		return entropy;
+		
+	}
+	
 	public static HashMap<String, ArrayList<String>> retreivedIds(HashMap<SolrDocument, ArrayList<SolrDocument>> docs){
 		HashMap<String, ArrayList<String>> predicted_results = new HashMap<String, ArrayList<String>>(); 
 		for(SolrDocument key : docs.keySet()){
@@ -141,7 +173,6 @@ public class QuestionRetreivalBaseline {
          * Initialize TfidfTerms and call the function to get top k bigrams
          * 
          */
-
        
 //        final HashMap<String,ArrayList<String>> doc_attributes = TfidfTerms.doc_attributes;
 //        HashMap<String,Double> mapTopK = TfidfTerms.top_terms(2, 20, postId);

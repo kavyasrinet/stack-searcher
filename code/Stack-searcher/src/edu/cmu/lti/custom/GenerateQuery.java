@@ -15,10 +15,9 @@ import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
 public class GenerateQuery {
 	MaxentTagger tagger;
-	//bigram_best = 
+
 	public GenerateQuery(){
 		tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
-		//init_best_bigrams("dataset/all_posts.txt","dataset/train.txt");
 	}
 	
 	//private static init_best_bigrams()
@@ -112,7 +111,6 @@ public class GenerateQuery {
   }
     
     public String getPOS(String title){
-
     	String tagged = this.tagger.tagString(title);
     	String out = "";
     	String[] parts = tagged.split("\\s+");
