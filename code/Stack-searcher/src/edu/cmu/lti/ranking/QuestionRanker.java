@@ -1,6 +1,7 @@
 package edu.cmu.lti.ranking;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.net.URISyntaxException;
 import java.net.MalformedURLException;
@@ -17,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 
+import java.util.Map.Entry;
+
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -24,9 +27,7 @@ import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
-
 import edu.cmu.lti.custom.GenerateQuery;
-
 import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
 import weka.classifiers.functions.SMO;
@@ -84,9 +85,9 @@ public class QuestionRanker
     	    		info.add((double)((ArrayList<Long>) doc.getFieldValue("UpVotes")).get(0));
     	    	else
     	    		info.add(null);
-    	    	if(doc.containsKey("DownVotes"))
-    	    		info.add((double)((ArrayList<Long>) doc.getFieldValue("DownVotes")).get(0));
-    	    	else
+//    	    	if(doc.containsKey("DownVotes"))
+//    	    		info.add((double)((ArrayList<Long>) doc.getFieldValue("DownVotes")).get(0));
+//    	    	else
     	    		info.add(null);
     	    	userInfo.put(Id, info);
     	    	userNameInfo.put(name, info);
@@ -102,10 +103,19 @@ public class QuestionRanker
 		 * 4. Comment Count
 		 * 5. Favorite Count
 		 * 6. AcceptedAnswerId - binary
+<<<<<<< HEAD
+		 * 7. Solr score 
+		 * 8. User's reputation
+		 * 9. User's #views
+		 * 10. User's Upvotes
+		 * 11. User's Downvotes
+=======
+		 * 7. 
 		 * 7. User's reputation
 		 * 8. User's #views
 		 * 9. User's Upvotes
 		 * 10. User's Downvotes
+>>>>>>> f54ea4b... added word mover's distance as feature
 		 */
 		ArrayList<Double> feats = new ArrayList<Double>();
 		ArrayList<Double> nones = new ArrayList<Double>();
@@ -116,7 +126,7 @@ public class QuestionRanker
 		HashMap<String, String> post_fields = new HashMap<String, String>();
 		for (String field: doc.getFieldNames())
 		{
-			if(field.equals("score"))
+			if(field.contains("score"))
 				post_fields.put(field,(doc.getFieldValue(field)).toString());
 			else if((!field.equals("id")) && (!field.equals("_version_")))
 				post_fields.put(field,((ArrayList)doc.getFieldValue(field)).get(0).toString());
@@ -141,9 +151,9 @@ public class QuestionRanker
 				feats.add(Double.parseDouble(post_fields.get("CommentCount")));
 			else
 				feats.add(null);
-			if(doc.containsKey("FavoriteCount"))
-				feats.add(Double.parseDouble(post_fields.get("FavoriteCount")));
-			else
+//			if(doc.containsKey("FavoriteCount"))
+//				feats.add(Double.parseDouble(post_fields.get("FavoriteCount")));
+//			else
 				feats.add(null);
 			
 			if(doc.getFieldValue("AcceptedAnswerId")!=null)
@@ -153,6 +163,16 @@ public class QuestionRanker
 
 			if(doc.getFieldValue("score")!=null)
 				feats.add(Double.parseDouble(post_fields.get("score")));
+			else
+				feats.add(0.0);
+			
+			if(doc.getFieldValue("wmd_score_1")!=null)
+				feats.add(Double.parseDouble(post_fields.get("wmd_score_1")));
+			else
+				feats.add(0.0);			
+			
+			if(doc.getFieldValue("wmd_score_2")!=null)
+				feats.add(Double.parseDouble(post_fields.get("wmd_score_2")));
 			else
 				feats.add(0.0);
 			
@@ -331,6 +351,7 @@ public class QuestionRanker
 	{
 		GenerateQuery generate_query = new GenerateQuery();
 		HashMap<SolrDocument, ArrayList<SolrDocument>> training_data = QuestionRetreivalBaseline.querySolr(training_file, 100, solr, generate_query);
+		add_wmd_scores(training_data);
 		HashMap<String, Set<String>> goldset = new HashMap<String, Set<String>>();
 		for (String line : Files.readAllLines(Paths.get(training_file))) {
 			String[] splits = line.trim().split("\t");
@@ -351,7 +372,7 @@ public class QuestionRanker
 			{
 				String result_id = String.valueOf(((ArrayList<Long>)  result.getFieldValue("Id")).get(0));
 				ArrayList<Double> result_feats = extract_features(result);
-				//result_feats.addAll(query_feats);
+				result_feats.addAll(query_feats);
 				result_feats.addAll(extract_features_pairwise(entry.getKey(), result));
 				
 				double[] feats = ArrayUtils.toPrimitive(result_feats.toArray(new Double[result_feats.size()]));
@@ -403,8 +424,47 @@ public class QuestionRanker
 		l.buildClassifier(weka_data);
 	}
 	
+	private void add_wmd_scores(
+			HashMap<SolrDocument, ArrayList<SolrDocument>> training_data) throws IOException, InterruptedException
+	{
+		PrintWriter writer = new PrintWriter("input_ids.txt", "UTF-8");
+		ArrayList<SolrDocument> queries = new ArrayList<SolrDocument>(); 
+    	for(Entry<SolrDocument, ArrayList<SolrDocument>> e  :training_data.entrySet())
+		{
+    		queries.add(e.getKey());
+    		String qid = ((ArrayList)e.getKey().getFieldValue("Id")).get(0).toString();
+	    	writer.print(qid+"\t");
+	    	for(SolrDocument result : e.getValue()) {
+	    		writer.print(((ArrayList)result.getFieldValue("Id")).get(0).toString()+"\t");
+	    	}
+	    	writer.println();
+		}
+    	writer.close();
+    	Process p = Runtime.getRuntime().exec("python get_wmd_scores.py input_ids.txt ./dataset_sample/w2v_model.pk output_scores.txt");
+    	p.waitFor();
+    	
+    	HashMap<String,ArrayList<String>> reranked_ids = new HashMap<String,ArrayList<String>>();
+    	boolean new_query = true;
+    	String current_qid = "";
+    	int i=0;
+    	for (String line : Files.readAllLines(Paths.get("output_scores.txt"))) {
+    		
+    		String[] scores = line.trim().split("\t");
+    		ArrayList<SolrDocument> results = training_data.get(queries.get(i));
+    		for(int j=0;j<results.size();j++)
+    		{
+    			String[] result_scores = scores[j].split(",");
+    			results.get(j).addField("wmd_score_1", result_scores[0]);
+    			results.get(j).addField("wmd_score_2", result_scores[1]);
+    		}
+    		training_data.put(queries.get(i),results);
+    		i++;
+    	}		
+	}
+
 	public HashMap<SolrDocument, ArrayList<SolrDocument>>rerank(HashMap<SolrDocument, ArrayList<SolrDocument>> predicted_results) throws Exception
 	{
+		add_wmd_scores(predicted_results);
 		HashMap<SolrDocument, ArrayList<SolrDocument>> output = new HashMap<SolrDocument, ArrayList<SolrDocument>>();
 		for(SolrDocument query: predicted_results.keySet())
 		{
@@ -414,7 +474,7 @@ public class QuestionRanker
 			for( SolrDocument result: results  )
 			{
 				ArrayList<Double> result_feats = extract_features(result);
-				//result_feats.addAll(query_feats);
+				result_feats.addAll(query_feats);
 				result_feats.addAll(extract_features_pairwise(query, result));
 				double[] feats = ArrayUtils.toPrimitive(result_feats.toArray(new Double[result_feats.size()]));
 				Instance i = new Instance(feats.length);
@@ -422,7 +482,9 @@ public class QuestionRanker
 				{
 					i.setValue(attIndex, feats[attIndex]);
 				}
-				double[] score = l.distributionForInstance(i);				
+
+				double[] score = l.distributionForInstance(i);
+
 				result_score.put(result, score[1] );
 			}
 				Collections.sort(results, new Comparator<SolrDocument>() {

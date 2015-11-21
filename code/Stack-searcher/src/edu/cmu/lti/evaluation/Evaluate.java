@@ -53,6 +53,7 @@ public class Evaluate
 						correct++;
 						precision = precision + correct/total;
 					}
+					
 				}
 			}
 			if(precision > 0)
@@ -127,7 +128,6 @@ public class Evaluate
 			for(String resultID: e.getValue())
 				if(resultID.matches("[0-9]+") && goldSet.get(questionID).contains(resultID))
 						relevant++;
-			
 			recall = recall + relevant/goldSet.get(questionID).size();
 			
 		}
