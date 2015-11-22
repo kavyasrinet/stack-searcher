@@ -211,7 +211,7 @@ public class QuestionRetreivalBaseline {
 //        query=title +" "+generate_query.expand(title +" "+ body +" "+ tags,true);
 //        query = generate_query.addTags(query, tags);    //*
         
-//        query = write_Map.get(Integer.parseInt(question_id)) +" "+tags;
+        query = write_Map.get(Integer.parseInt(question_id)) +" "+tags;
 //        System.out.println(query);
         return query.replaceAll("[^A-Za-z0-9 ']", " ").trim();
     }
