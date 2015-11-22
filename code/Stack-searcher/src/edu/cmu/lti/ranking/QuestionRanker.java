@@ -447,13 +447,14 @@ public class QuestionRanker
     	boolean new_query = true;
     	String current_qid = "";
     	int i=0;
-    	for (String line : Files.readAllLines(Paths.get("output_scores.txt"))) {
-    		
-    		String[] scores = line.trim().split("\t");
+    	for (String line : Files.readAllLines(Paths.get("output_scores.txt"))) {    		
+    		String[] scores = line.split("\\t");
     		ArrayList<SolrDocument> results = training_data.get(queries.get(i));
+//    		System.out.println(results.size());;
+//    		System.out.println(scores.length);
     		for(int j=0;j<results.size();j++)
     		{
-    			String[] result_scores = scores[j].split(",");
+        		String[] result_scores = scores[j].split("[,]");
     			results.get(j).addField("wmd_score_1", result_scores[0]);
     			results.get(j).addField("wmd_score_2", result_scores[1]);
     		}

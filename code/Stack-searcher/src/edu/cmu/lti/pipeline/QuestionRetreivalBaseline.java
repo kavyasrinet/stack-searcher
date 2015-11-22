@@ -41,8 +41,8 @@ public class QuestionRetreivalBaseline {
 
 		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 
-//  	QuestionRanker ranker = new QuestionRanker(solr);
-//  	ranker.train_model( "dataset_sample/train.txt");
+	  	QuestionRanker ranker = new QuestionRanker(solr);
+	  	ranker.train_model( "dataset_sample/train.txt");
 
 
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
@@ -59,7 +59,7 @@ public class QuestionRetreivalBaseline {
     	String query_file = "dataset_sample/val.txt";  	
     	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,300, solr, generate_query);
     	
-//    	docs = ranker.rerank(docs);
+    	docs = ranker.rerank(docs);
     	
     	//you can call getEntropy function here to compute the entropy on the list of docs per query
     	
