@@ -1,10 +1,15 @@
 package edu.cmu.lti.custom;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+
 
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
@@ -14,10 +19,12 @@ import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
 
 public class GenerateQuery {
+	HashMap<String,String> w2v;
 	MaxentTagger tagger;
 
-	public GenerateQuery(){
+	public GenerateQuery() throws IOException{
 		tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
+    	w2v = getW2V();
 	}
 	
 	//private static init_best_bigrams()
@@ -27,6 +34,7 @@ public class GenerateQuery {
 //    	e.getPOS("Costa Rica Puerto Rico");
 //    	e.getPOS("Hello my name is Tada", new HashSet<String>(), tagger);
     //	e.getNGrams("Hello my name is Kavya",1);
+//    	getW2V();
     }
     
     //This function generates the query based on frequent bigrams / phrases
@@ -116,7 +124,7 @@ public class GenerateQuery {
     	String[] parts = tagged.split("\\s+");
     	for(String s: parts){
     		String tag = s.split("_")[1];
-    		if(tag.equals("NNP") || tag.equals("JJ"))
+    		if(tag.contains("NNP") || tag.contains("JJ"))
     			out = out+" "+s.split("_")[0];
     	}
     	return out;
@@ -140,4 +148,33 @@ public class GenerateQuery {
     	title= title + " "+sentences[0];
     	return title+ " "+sentences[sentences.length-1];
     }    
+    
+    public static HashMap<String,String> getW2V() throws IOException {
+    	HashMap<String,String> w2v_map = new HashMap<String,String>();
+    	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/w2v_java.txt")));
+    	String line ="";
+    	while((line=reader.readLine())!=null){
+    		line = line.trim();
+    		String[] splited = line.split("\\s+");
+    		w2v_map.put(splited[0],splited[1]);
+    	}
+    	reader.close();
+    	return w2v_map;
+    }
+    
+    public String expand(String title,Boolean pos_check) throws IOException {
+//    	String expandedTitle = title + " "; dont want everything if title inc body
+    	String expandedTitle = "";
+    	if (pos_check) { 
+    		GenerateQuery e = new GenerateQuery();
+        	title = e.getPOS(title);
+    	}
+    	String[] splitTitle = title.split("\\s+");
+    	for (String tok: splitTitle) {
+    			if (this.w2v.containsKey(tok)){
+        			expandedTitle += this.w2v.get(tok)  + " ";
+        		}  
+    		}
+    	return expandedTitle;
+	    }
 }

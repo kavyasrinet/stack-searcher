@@ -200,16 +200,24 @@ public class QuestionRetreivalBaseline {
       //    query = generate_query.getRequestUsingBigrams(title+" "+body, map);
       //   query = generate_query.getKeywords(title, stopwords);
        // query = title+ " "+generate_query.getPOS(title+ " "+body, stopwords);
-       // query = generate_query.addTags(title, tags);
+//        query = generate_query.addTags(title, tags);
         //generate_query.appendBody(title, body)
   
         //   query = title + " " + tags; 
+        
+//        query=generate_query.expand(title,false);
+//        query = generate_query.addTags(query, tags);
+//        query=title +" "+generate_query.expand(tags,true);   //* 
+//        query=title +" "+generate_query.expand(title +" "+ body +" "+ tags,true);
+//        query = generate_query.addTags(query, tags);    //*
+        
         query = write_Map.get(Integer.parseInt(question_id)) +" "+tags;
+//        System.out.println(query);
         return query.replaceAll("[^A-Za-z0-9 ']", " ").trim();
     }
     
     public static HashMap<String,ArrayList<String>> rerank_results(HashMap<String,ArrayList<String>> predicted_results) throws IOException, InterruptedException
-    {   		
+    {   		 
     	
     	PrintWriter writer = new PrintWriter("input_ids.txt", "UTF-8");
     	for(Entry<String,ArrayList<String>> e  :predicted_results.entrySet())
