@@ -117,7 +117,8 @@ public class QuestionRetreivalBaseline {
 		int total_docs = ids.size();
 		double entropy = 0.0;
 		for(String tag: tag_Map.keySet()){
-			entropy = entropy + ((tag_Map.get(tag)*1.0)/total_docs);
+			double ent = ((tag_Map.get(tag)*1.0)/total_docs);
+			entropy = entropy + ent*Math.log(ent);
 		}
 		return entropy;
 		
