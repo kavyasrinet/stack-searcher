@@ -433,10 +433,8 @@ public class QuestionRanker
 	{
 		
 		PrintWriter writer = new PrintWriter(input_file, "UTF-8");
-		ArrayList<SolrDocument> queries = new ArrayList<SolrDocument>(); 
-    	for(Entry<SolrDocument, ArrayList<SolrDocument>> e  :training_data.entrySet())
+		for(Entry<SolrDocument, ArrayList<SolrDocument>> e  :training_data.entrySet())
 		{
-    		queries.add(e.getKey());
     		String qid = ((ArrayList)e.getKey().getFieldValue("Id")).get(0).toString();
 	    	writer.print(qid+"\t");
 	    	for(SolrDocument result : e.getValue()) {
