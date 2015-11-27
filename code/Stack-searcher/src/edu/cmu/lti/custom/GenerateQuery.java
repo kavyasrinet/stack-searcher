@@ -27,17 +27,16 @@ public class GenerateQuery {
     	w2v = getW2V();
 	}
 	
-	//private static init_best_bigrams()
     public static void main(String[] args) throws URISyntaxException, IOException {
     	GenerateQuery e = new GenerateQuery();
-    	MaxentTagger tagger = new MaxentTagger("taggers/english-left3words-distsim.tagger");
-//    	e.getPOS("Costa Rica Puerto Rico");
-//    	e.getPOS("Hello my name is Tada", new HashSet<String>(), tagger);
-    //	e.getNGrams("Hello my name is Kavya",1);
-//    	getW2V();
+
     }
     
-    //This function generates the query based on frequent bigrams / phrases
+/*
+ * This function generatesa a query based on the frequency of top k n grams given in the map.
+ * We can either just pick the top k n-grams or retain them and use the unigrams instead when the bigram isn't in the top-k bigrams
+ * list.
+ */
     public String getRequestUsingBigrams(String text, HashMap<String, Double> map){
     	ArrayList<String> terms = new ArrayList<String>();
     	ArrayList<String> bigrams = getNGrams(text,2);
@@ -69,7 +68,9 @@ public class GenerateQuery {
     	return result.trim();
     }
 
-
+/*
+ * This extracts all keywords from text using a standard stopword list
+ */
     public static String getKeywords(String s, HashSet<String> stopwords) throws IOException{
 
     //Remove standard stopwords 
@@ -86,9 +87,10 @@ public class GenerateQuery {
     	return updated;
     }
     
-  //given n , this function returns back an arrayList of n-grams.
-
-  //  The value of n>= 2
+/*
+ * Given 'n' this function returns back a list of n-grams.
+ * n>=2
+ */
   public static ArrayList<String> getNGrams(String text, int n){	  
 	  text = (text).replaceAll("[^a-zA-Z0-9\\s\\']", " ");
 	  ArrayList<String> ngrams = new ArrayList<String>();
@@ -118,7 +120,10 @@ public class GenerateQuery {
 	  return ngrams;
   }
     
-    public String getPOS(String title){
+/*
+ * This function returns back the Proper nouns and adjectives in text
+ */
+  public String getPOS(String title){
     	String tagged = this.tagger.tagString(title);
     	String out = "";
     	String[] parts = tagged.split("\\s+");
@@ -130,18 +135,9 @@ public class GenerateQuery {
     	return out;
     }
     
-    //Appends tags to the title
-    public String addTags(String title, String tagList){
-    	String[] tags = tagList.trim().split("\\s+");
-    	String s =title.toLowerCase().trim();
-    	for(String tag: tags){
-    		tag = tag.trim().toLowerCase();
-    		s = s + " "+tag;
-    	}
-    	return s.trim();   	
-    }
-    
-    //Appends the last line of the body
+/* 
+ * Appends the last line of the body to title
+ */
     public String appendBody(String title, String body){
     	//appends title and last sentence of body
     	String[] sentences = body.split(".");
