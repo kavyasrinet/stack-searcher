@@ -139,12 +139,16 @@ public class GenerateQuery {
  * Appends the last line of the body to title
  */
     public String appendBody(String title, String body){
-    	//appends title and last sentence of body
+
     	String[] sentences = body.split(".");
     	title= title + " "+sentences[0];
     	return title+ " "+sentences[sentences.length-1];
     }    
-    
+
+/*
+ * Read the Word to vec file that contains the text and closest phrase to the text based on
+ * word-to-vec
+ */
     public static HashMap<String,String> getW2V() throws IOException {
     	HashMap<String,String> w2v_map = new HashMap<String,String>();
     	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/w2v_java.txt")));
@@ -157,9 +161,12 @@ public class GenerateQuery {
     	reader.close();
     	return w2v_map;
     }
-    
+/*
+ * Expands the text based on the flag - pos_check.
+ * If the flag is set, it only expands Proper Noun and Adjectives 
+ * otherwise expands all words in the text.    
+ */
     public String expand(String title,Boolean pos_check) throws IOException {
-//    	String expandedTitle = title + " "; dont want everything if title inc body
     	String expandedTitle = "";
     	if (pos_check) { 
     		GenerateQuery e = new GenerateQuery();
