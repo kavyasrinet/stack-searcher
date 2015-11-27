@@ -18,11 +18,11 @@ def get_doc(id1):
 def get_score(s1, s2, model):
 	s1 =re.sub('[^a-zA-Z\s]+', ' ', s1)
 	s2 =re.sub('[^a-zA-Z\s]+', ' ', s2)
-	set1 = [word  for word in set(s1.strip().split()) if word in model ]
-	set2 = [word  for word in set(s2.strip().split()) if word in model]
+	set1 = [word  for word in set( s1.strip().lower().split() + s1.strip().split()) if word in model ]
+	set2 = [word  for word in set(s2.strip().lower().split() + s2.strip().split()) if word in model]
 
-	c1 = collections.Counter(s1.lower().strip().split())
-	c2 = collections.Counter(s2.lower().strip().split())
+	c1 = collections.Counter(s1.strip().split() + s1.lower().strip().split())
+	c2 = collections.Counter( s2.strip().split() + s2.lower().strip().split())
 
 	w1 = [c1[word]*1.00 for word in set1]
 	w2 = [c2[word]*1.00 for word in set2]
@@ -60,8 +60,7 @@ for line in open(input_file).readlines():
 	input_questions.append((query, results))
 	s =''
 	for result in results:
-		#scores = get_wmd(query, result, word_2_vec_model)
-		scores =[0,0]
+		scores = get_wmd(query, result, word_2_vec_model)
 		s+='\t'+str(scores[0])+","+str(scores[1])
 		
 	output_file.write(s.strip() +"\n")

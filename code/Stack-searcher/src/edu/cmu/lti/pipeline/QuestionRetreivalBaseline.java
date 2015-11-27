@@ -38,9 +38,8 @@ public class QuestionRetreivalBaseline {
 
 		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 
-		
-//  	QuestionRanker ranker = new QuestionRanker(solr);
-//  	ranker.train_model( "dataset_sample/train.txt");
+	  	QuestionRanker ranker = new QuestionRanker(solr);
+	  	ranker.train_model( "dataset_sample/train.txt");
 
 
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
@@ -57,7 +56,7 @@ public class QuestionRetreivalBaseline {
     	String query_file = "dataset_sample/val.txt";  	
     	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
     	
-//    	docs = ranker.rerank(docs);
+    	docs = ranker.rerank(docs);
     	
     	
     	System.out.println("Evaluating\n");
@@ -74,13 +73,6 @@ public class QuestionRetreivalBaseline {
     	System.out.println("P@1 Score = " + evaluator.getPAtK(predicted_results,1));
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
 
-// you can call getEntropy function here to compute the entropy on the list of docs per query
-
-//    	System.out.println("Computing entropy");
-//    	double entropy = 0.0;
-//    	for(SolrDocument doc: docs.keySet())
-//    		entropy = entropy + getEntropy(docs.get(doc), solr);
-//    	System.out.println(entropy);
     }
     
 	//call this function to get top k phrases from the checked in file

@@ -38,7 +38,7 @@ for child in root:
 
 		if field == 'Title' or field == 'Body':
 			s = re.sub('[^a-zA-Z\s]+', ' ', att[field])
-			for word in set(s.lower().strip().split()):
+			for word in set(s.strip().split() + s.strip().lower().split()):
 				all_words.add(word)
 
 print len(all_words)
