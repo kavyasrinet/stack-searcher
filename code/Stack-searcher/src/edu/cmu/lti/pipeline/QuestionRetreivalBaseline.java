@@ -41,27 +41,27 @@ public class QuestionRetreivalBaseline {
 
 		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
 
+		
 //  	QuestionRanker ranker = new QuestionRanker(solr);
 //  	ranker.train_model( "dataset_sample/train.txt");
 
 
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
-    	BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
+		BufferedReader reader = new BufferedReader(new FileReader(new File("dataset_sample/stopwords.txt")));
     	String line ="";
     	while((line=reader.readLine())!=null){
     		line = line.trim();
     		stopwords.add(line);
     	}
     	reader.close();
-//call this with the value of k    	
-    	readPhrases(5);
+//     call this with the value of k to get the top phrases using RAKE, the file has top 15 phrases as of now.    	
+    	readPhrases(8);
     	
     	String query_file = "dataset_sample/val.txt";  	
-    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,300, solr, generate_query);
+    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
     	
 //    	docs = ranker.rerank(docs);
     	
-    	//you can call getEntropy function here to compute the entropy on the list of docs per query
     	
     	System.out.println("Evaluating\n");
     	HashMap<String, ArrayList<String>> predicted_results = retreivedIds(docs);
@@ -76,6 +76,14 @@ public class QuestionRetreivalBaseline {
        	System.out.println("Recall Score = " + evaluator.getRecall(predicted_results));
     	System.out.println("P@1 Score = " + evaluator.getPAtK(predicted_results,1));
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
+
+// you can call getEntropy function here to compute the entropy on the list of docs per query
+
+//    	System.out.println("Computing entropy");
+//    	double entropy = 0.0;
+//    	for(SolrDocument doc: docs.keySet())
+//    		entropy = entropy + getEntropy(docs.get(doc), solr);
+//    	System.out.println(entropy);
     }
     
 	//call this function to get top k phrases from the checked in file
@@ -96,7 +104,10 @@ public class QuestionRetreivalBaseline {
     	reader1.close();
 	}
 	
-	//call this fucntion with the list of documents to get entropy
+/* call this function with the list of documents to get entropy, computed as
+ * sum over all tags(p logp), where p is the probability of a tag appearing in the fetched documents
+ * 
+ */	
 	public static double getEntropy(ArrayList<SolrDocument> docs, SolrServer solr) throws SolrServerException{
 		ArrayList<String> ids = new ArrayList<String>();    
 		for(SolrDocument doc : docs){
@@ -120,10 +131,12 @@ public class QuestionRetreivalBaseline {
 			double ent = ((tag_Map.get(tag)*1.0)/total_docs);
 			entropy = entropy + ent*Math.log(ent);
 		}
-		return entropy;
-		
+		return entropy;		
 	}
-	
+/*
+ * This function returns a HashMap that contains the questionId as the key
+ * and the list of IDs of fetched documents (map from SolrDocument to their IDs)	
+ */
 	public static HashMap<String, ArrayList<String>> retreivedIds(HashMap<SolrDocument, ArrayList<SolrDocument>> docs){
 		HashMap<String, ArrayList<String>> predicted_results = new HashMap<String, ArrayList<String>>(); 
 		for(SolrDocument key : docs.keySet()){
@@ -138,7 +151,9 @@ public class QuestionRetreivalBaseline {
     	}
 		return predicted_results;
 	}
-	
+/*
+ * Get attributes of a post using the Solr Server and the ID of the post	
+ */
 	public static HashMap<String, String>get_post(String postid,  SolrServer solr) throws SolrServerException
 	{	
 		ModifiableSolrParams params = new ModifiableSolrParams();
@@ -156,7 +171,11 @@ public class QuestionRetreivalBaseline {
 		}
 		return result;
 	}
-    
+/*
+ * This function takes in the postID and generates a query using on eof the methods we have developed
+ * the query is then given to Solr to fetch results.
+ * This is the query generation module.    
+ */
 	private static  String generateQuery(String postId,SolrServer solr, GenerateQuery generate_query) throws IOException, SolrServerException
     {
     	String query = "";
@@ -204,11 +223,15 @@ public class QuestionRetreivalBaseline {
        // query = generate_query.addTags(title, tags);
         //generate_query.appendBody(title, body)
   
-        //   query = title + " " + tags; 
-        query = write_Map.get(Integer.parseInt(question_id)) +" "+tags;
+           query = title + " " + tags; 
+
+   //     query =write_Map.get(Integer.parseInt(question_id)) +" "+tags;
         return query.replaceAll("[^A-Za-z0-9 ']", " ").trim();
     }
-    
+ 
+	/*
+	 * Post training, we use the feature vectors to rerank the results we got.
+	 */
     public static HashMap<String,ArrayList<String>> rerank_results(HashMap<String,ArrayList<String>> predicted_results) throws IOException, InterruptedException
     {   		
     	
@@ -250,9 +273,9 @@ public class QuestionRetreivalBaseline {
     
 
     /*
-     * This function gets the first 100 lines of the Posts.xml file and 
-     * crawls the web using BingSearchAPI and returns back a hashmap that contains the PostId
-     * as the key and a list of related PostIds as per Bing
+     * This function queries Solr using the query generated from the generateQuery function
+     * and returns back a hashmap that has the document we are querying for and the list of documents returned for the query 
+     * as a result.
      */
     public static HashMap<SolrDocument, ArrayList<SolrDocument>> querySolr(String query_file, int resultSetSize, SolrServer solr, GenerateQuery generate_query) throws IOException, URISyntaxException, SolrServerException{
         

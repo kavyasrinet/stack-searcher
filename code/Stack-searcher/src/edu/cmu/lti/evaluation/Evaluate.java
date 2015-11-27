@@ -31,7 +31,9 @@ public class Evaluate
     	}
 	}
 	
-	
+/*
+ * This function computes the MAP score over the predicted result for every query.	
+ */
 	public float getMapScore(HashMap<String,ArrayList<String>> predicted_results)
 	{
 		int total_questions = predicted_results.size();
@@ -61,7 +63,10 @@ public class Evaluate
 		}
 		return map/total_questions;		
 	}
-	
+
+	/*
+	 * This function computes Precision at K for the given query for every result document.
+	 */
 	public float getPAtK(HashMap<String,ArrayList<String>> predicted_results,int k)
 	{
 		int total_questions = predicted_results.size();
@@ -88,7 +93,9 @@ public class Evaluate
 		}
 		return map/total_questions;		
 	}
-	
+/*
+ * This function computes Mean reciprocal rank.	
+ */
 	public float getMrrScore(HashMap<String,ArrayList<String>> predicted_results)
 	{
 		int total_questions = predicted_results.size();
@@ -115,7 +122,10 @@ public class Evaluate
 		}
 		return mrr/total_questions;		
 	}
-	
+
+	/*
+	 * This funcion computes recall.
+	 */
 	public float getRecall(HashMap<String,ArrayList<String>> predicted_results)
 	{
 		int total_questions = predicted_results.size();
