@@ -2,8 +2,6 @@ package edu.cmu.lti.ranking;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
-import java.net.URISyntaxException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -11,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Collections;
 import java.util.Comparator;
@@ -18,7 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 
-import java.util.Map.Entry;
+
+
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
@@ -27,6 +27,7 @@ import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
+
 import edu.cmu.lti.custom.GenerateQuery;
 import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
@@ -37,7 +38,6 @@ import weka.core.Attribute;
 import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
-import edu.cmu.lti.custom.GenerateQuery;
 import edu.cmu.lti.pipeline.QuestionRetreivalBaseline;
 import edu.stanford.nlp.util.ArrayUtils;
 
@@ -175,7 +175,7 @@ public class QuestionRanker
 				feats.add(Double.parseDouble(post_fields.get("wmd_score_2")));
 			else
 				feats.add(0.0);
-			
+		
 			if(doc.containsKey("OwnerUserId")){
 				long Id = Long.parseLong(post_fields.get("OwnerUserId"));
 				feats.addAll(userInfo.get(Id));
@@ -190,9 +190,8 @@ public class QuestionRanker
 				}
 				else
 					feats.addAll(nones);
-			
-			}				
-			
+			}
+									
 		}
 		return feats;
 	}
@@ -351,7 +350,7 @@ public class QuestionRanker
 	{
 		GenerateQuery generate_query = new GenerateQuery();
 		HashMap<SolrDocument, ArrayList<SolrDocument>> training_data = QuestionRetreivalBaseline.querySolr(training_file, 100, solr, generate_query);
-		add_wmd_scores(training_data);
+		add_wmd_scores(training_data,"output_scores.txt","input_ids.txt");
 		HashMap<String, Set<String>> goldset = new HashMap<String, Set<String>>();
 		for (String line : Files.readAllLines(Paths.get(training_file))) {
 			String[] splits = line.trim().split("\t");
@@ -365,7 +364,7 @@ public class QuestionRanker
 		{
 			ArrayList<Double> query_feats = extract_features(entry.getKey());
 			String query_id = String.valueOf(((ArrayList<Long>)  entry.getKey().getFieldValue("Id")).get(0));
-			Instance i;
+			
 			ArrayList<double[]> pos_data = new ArrayList<double[]>();
 			ArrayList<double[]> neg_data = new ArrayList<double[]>();
 			for(SolrDocument result : entry.getValue())
@@ -400,8 +399,6 @@ public class QuestionRanker
 				for(int q=0;q<neg_data.size();q++)
 				{
 					double[] neg = neg_data.get(q);
-					double[] pos_add = new double[neg_data.get(0).length+1];
-					double[] neg_add = new double[neg_data.get(0).length+1];
 					Instance neg_instance = new Instance(neg.length);
 					Instance pos_instance = new Instance(neg.length);
 					pos_instance.setDataset(weka_data);
@@ -418,16 +415,24 @@ public class QuestionRanker
 				}
 			}		
 		}
-			
+		/*	
+		CSVSaver c = new CSVSaver();
+		c.setInstances(weka_data);
+		c.setDestination(new File("ranker_training_data.csv"));
+		c.writeBatch();
+		
+		System.out.println("Done saving");
+		*/
 		l = new Logistic();
 		//l.setBuildLogisticModels(true);
 		l.buildClassifier(weka_data);
 	}
 	
 	private void add_wmd_scores(
-			HashMap<SolrDocument, ArrayList<SolrDocument>> training_data) throws IOException, InterruptedException
+			HashMap<SolrDocument, ArrayList<SolrDocument>> training_data, String output_file, String input_file) throws IOException, InterruptedException
 	{
-		PrintWriter writer = new PrintWriter("input_ids.txt", "UTF-8");
+		
+		PrintWriter writer = new PrintWriter(input_file, "UTF-8");
 		ArrayList<SolrDocument> queries = new ArrayList<SolrDocument>(); 
     	for(Entry<SolrDocument, ArrayList<SolrDocument>> e  :training_data.entrySet())
 		{
@@ -440,14 +445,24 @@ public class QuestionRanker
 	    	writer.println();
 		}
     	writer.close();
+    	
+		
+		ArrayList<SolrDocument> queries = new ArrayList<SolrDocument>(); 
+		Map<String, SolrDocument> querymap = new HashMap<String, SolrDocument>();
+		
+		for(SolrDocument query : training_data.keySet())
+		{
+			
+			querymap.put(((ArrayList)query.getFieldValue("Id")).get(0).toString(), query);
+		}
     	Process p = Runtime.getRuntime().exec("python get_wmd_scores.py input_ids.txt ./dataset_sample/w2v_model.pk output_scores.txt");
     	p.waitFor();
-    	
-    	HashMap<String,ArrayList<String>> reranked_ids = new HashMap<String,ArrayList<String>>();
-    	boolean new_query = true;
-    	String current_qid = "";
+		for (String line : Files.readAllLines(Paths.get(input_file))) {
+			queries.add(querymap.get(line.trim().split("\t")[0]));
+		}
+		
     	int i=0;
-    	for (String line : Files.readAllLines(Paths.get("output_scores.txt"))) {
+    	for (String line : Files.readAllLines(Paths.get(output_file))) {
     		
     		String[] scores = line.trim().split("\t");
     		ArrayList<SolrDocument> results = training_data.get(queries.get(i));
@@ -464,7 +479,7 @@ public class QuestionRanker
 
 	public HashMap<SolrDocument, ArrayList<SolrDocument>>rerank(HashMap<SolrDocument, ArrayList<SolrDocument>> predicted_results) throws Exception
 	{
-		add_wmd_scores(predicted_results);
+		add_wmd_scores(predicted_results,"output_scores_val.txt","input_ids_val.txt");
 		HashMap<SolrDocument, ArrayList<SolrDocument>> output = new HashMap<SolrDocument, ArrayList<SolrDocument>>();
 		for(SolrDocument query: predicted_results.keySet())
 		{
