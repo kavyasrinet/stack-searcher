@@ -103,19 +103,12 @@ public class QuestionRanker
 		 * 4. Comment Count
 		 * 5. Favorite Count
 		 * 6. AcceptedAnswerId - binary
-<<<<<<< HEAD
 		 * 7. Solr score 
+		 * 8. WMD score
 		 * 8. User's reputation
 		 * 9. User's #views
 		 * 10. User's Upvotes
 		 * 11. User's Downvotes
-=======
-		 * 7. 
-		 * 7. User's reputation
-		 * 8. User's #views
-		 * 9. User's Upvotes
-		 * 10. User's Downvotes
->>>>>>> f54ea4b... added word mover's distance as feature
 		 */
 		ArrayList<Double> feats = new ArrayList<Double>();
 		ArrayList<Double> nones = new ArrayList<Double>();
@@ -264,11 +257,6 @@ public class QuestionRanker
 	
 	public ArrayList<Double> sdm_score(String query_raw, String document_raw) {
 		// default weights
-//		Double unigramWeight = 0.1; 
-//		Double bigramOWeight = 0.2;
-//		Double bigramUWeight = 0.1; 
-//		Double trigramOWeight = 0.8;
-//		Double trigramUWeight = 0.1;
 		int w = 8; // default window for unordered computation. 
 		
 		ArrayList<Double> feats_sdm = new ArrayList<Double>();
@@ -453,7 +441,7 @@ public class QuestionRanker
 			
 			querymap.put(((ArrayList)query.getFieldValue("Id")).get(0).toString(), query);
 		}
-    	Process p = Runtime.getRuntime().exec("python get_wmd_scores.py input_ids.txt ./dataset_sample/w2v_model.pk output_scores.txt");
+    	Process p = Runtime.getRuntime().exec("python get_wmd_scores.py "+input_file+" ./dataset_sample/w2v_model.pk "+output_file);
     	p.waitFor();
 		for (String line : Files.readAllLines(Paths.get(input_file))) {
 			queries.add(querymap.get(line.trim().split("\t")[0]));
