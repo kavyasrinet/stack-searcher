@@ -2,7 +2,6 @@ package edu.cmu.lti.pipeline;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -23,9 +22,8 @@ import org.apache.solr.common.params.ModifiableSolrParams;
 
 import edu.cmu.lti.evaluation.Evaluate;
 import edu.cmu.lti.custom.GenerateQuery;
+import edu.cmu.lti.ranking.QuestionRanker;
 import edu.cmu.lti.search.RetrievalResult;
-import edu.cmu.lti.custom.*;
-import edu.cmu.lti.ranking.*;
 
 
 public class QuestionRetreivalBaseline {
@@ -199,35 +197,26 @@ public class QuestionRetreivalBaseline {
 //        	query = query + " " + s;
 //        }
         
-//        System.out.println(res.get(0));
-//        System.out.println(res.get(1));
-      //    query = e.getRequestUsingBigrams(title+" "+body, map);
+     //    query = e.getRequestUsingBigrams(title+" "+body, map);
       //   query = e.getKeywords(title, stopwords);
        // query = title+ " "+e.getPOS(title+ " "+body, stopwords);
-       // query = e.addTags(title, tags);
-
      //  query = e.appendBody(title, body);
 
         //Use the top k bigrams containing map for the folowing
       //    query = generate_query.getRequestUsingBigrams(title+" "+body, map);
       //   query = generate_query.getKeywords(title, stopwords);
        // query = title+ " "+generate_query.getPOS(title+ " "+body, stopwords);
-//        query = generate_query.addTags(title, tags);
         //generate_query.appendBody(title, body)
   
 
            query = title + " " + tags; 
 
    //     query =write_Map.get(Integer.parseInt(question_id)) +" "+tags;
-
-        //   query = title + " " + tags; 
-        
 //        query=generate_query.expand(title,false);
 //        query = generate_query.addTags(query, tags);
 //        query=title +" "+generate_query.expand(tags,true);   //* 
 //        query=title +" "+generate_query.expand(title +" "+ body +" "+ tags,true);
 //        query = generate_query.addTags(query, tags);    //*
-        
         query = write_Map.get(Integer.parseInt(question_id)) +" "+tags + " " + title+" "+generate_query.expand(tags,true);
 //        System.out.println(query);
 
