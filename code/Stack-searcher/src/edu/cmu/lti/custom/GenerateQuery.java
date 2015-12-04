@@ -169,8 +169,8 @@ public class GenerateQuery {
     public String expand(String title,Boolean pos_check) throws IOException {
     	String expandedTitle = "";
     	if (pos_check) { 
-    		GenerateQuery e = new GenerateQuery();
-        	title = e.getPOS(title);
+    		
+        	title = this.getPOS(title);
     	}
     	String[] splitTitle = title.split("\\s+");
     	for (String tok: splitTitle) {
