@@ -54,10 +54,10 @@ public class QuestionRetreivalBaseline {
     	}
     	reader.close();
 //     call this with the value of k to get the top phrases using RAKE, the file has top 15 phrases as of now.    	
-    	readPhrases(8);
+    	readPhrases(15);
     	
     	String query_file = "dataset_sample/val.txt";  	
-    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,100, solr, generate_query);
+    	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,500, solr, generate_query);
     	
     	docs = ranker.rerank(docs);
     	
@@ -87,7 +87,7 @@ public class QuestionRetreivalBaseline {
     		String[] terms = line.split("\t");
     		int i=1;
     		String query = "";
-    		while(i<k && i<terms.length){
+    		while(i<=k && i<terms.length){
     			query = query+ "\""+terms[i]+"\""+" ";
     			i = i+1;
     		}
@@ -228,7 +228,7 @@ public class QuestionRetreivalBaseline {
 //        query=title +" "+generate_query.expand(title +" "+ body +" "+ tags,true);
 //        query = generate_query.addTags(query, tags);    //*
         
-        query = write_Map.get(Integer.parseInt(question_id)) +" "+tags;
+        query = write_Map.get(Integer.parseInt(question_id)) +" "+tags + " " + title+" "+generate_query.expand(tags,true);
 //        System.out.println(query);
 
         return query.replaceAll("[^A-Za-z0-9 ']", " ").trim();

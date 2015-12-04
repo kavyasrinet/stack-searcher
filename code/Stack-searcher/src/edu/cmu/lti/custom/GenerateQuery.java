@@ -162,8 +162,9 @@ public class GenerateQuery {
 //    	String expandedTitle = title + " "; dont want everything if title inc body
     	String expandedTitle = "";
     	if (pos_check) { 
-    		GenerateQuery e = new GenerateQuery();
-        	title = e.getPOS(title);
+//    		GenerateQuery e = new GenerateQuery();
+//        	title = e.getPOS(title);
+        	title = this.getPOS(title);
     	}
     	String[] splitTitle = title.split("\\s+");
     	for (String tok: splitTitle) {
