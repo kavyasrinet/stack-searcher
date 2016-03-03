@@ -1,9 +1,11 @@
 package edu.cmu.lti.evaluation;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -124,7 +126,7 @@ public class Evaluate
 	}
 
 	/*
-	 * This funcion computes recall.
+	 * This function computes recall.
 	 */
 	public float getRecall(HashMap<String,ArrayList<String>> predicted_results)
 	{
@@ -142,5 +144,32 @@ public class Evaluate
 			
 		}
 		return recall/total_questions;		
+	}
+
+	/*
+	 * This function computes recall.
+	 */
+	public void doErrorAnalysis(HashMap<String,ArrayList<String>> predicted_results) throws IOException
+	{
+		File output = new File("errorAnalysis.txt");
+		BufferedWriter writer;
+		writer = new BufferedWriter(new FileWriter(output, true));
+		
+		int total_questions = predicted_results.size();
+		for(Entry<String,ArrayList<String>> e  :predicted_results.entrySet())
+		{
+			String questionID = e.getKey();
+			writer.write(questionID);
+			writer.write("\n");
+			HashSet<String> allResults = goldSet.get(questionID);
+			for(String resultID: allResults)
+				if (! e.getValue().contains(resultID)) {
+					writer.write(resultID);
+					writer.write("\n");
+				}
+			writer.write("\n");
+		}
+		writer.close();
+		return;		
 	}
 }

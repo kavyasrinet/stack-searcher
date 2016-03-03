@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -43,12 +43,12 @@ import edu.stanford.nlp.util.ArrayUtils;
 
 public class QuestionRanker
 {
-	SolrServer solr;
+	HttpSolrClient solr;
 	Logistic l;
 	 HashMap<Long, ArrayList<Double>> userInfo = new HashMap<Long, ArrayList<Double>>();
 	 HashMap<String, ArrayList<Double>> userNameInfo = new HashMap<String, ArrayList<Double>>();
 
-	public SolrDocument get_solr_doc( String post_id) throws SolrServerException
+	public SolrDocument get_solr_doc( String post_id) throws SolrServerException, IOException
 	{
 		ModifiableSolrParams params = new ModifiableSolrParams();
 		params.set("qt", "/select");
@@ -58,10 +58,10 @@ public class QuestionRanker
 		return response.getResults().get(0);		
 	}
 	 
-	public QuestionRanker(SolrServer solr) throws MalformedURLException, SolrServerException{
-		this.solr = solr;
+	public QuestionRanker(HttpSolrClient solr2) throws SolrServerException, IOException{
+		this.solr = solr2;
 		
-		SolrServer usersolr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelusers/");
+		HttpSolrClient usersolr = new HttpSolrClient("http://localhost:8983/solr/travelstackexchange/");
 			SolrQuery solr_query = new SolrQuery("*:*");
 			solr_query.setRows(21187);  
 
@@ -71,8 +71,10 @@ public class QuestionRanker
     	    for(SolrDocument doc: s){
     	    	ArrayList<Double> info = new ArrayList<Double>();
     	    	
-    	    	long Id = ((ArrayList<Long>) doc.getFieldValue("Id")).get(0);
-    	    	String name = ((ArrayList<String>) doc.getFieldValue("DisplayName")).get(0);
+//    	    	long Id = ((ArrayList<Long>) doc.getFieldValue("OwnerUserId")).get(0);
+    	    	long Id = 0;
+//    	    	String name = ((ArrayList<String>) doc.getFieldValue("DisplayName")).get(0);
+    	    	String name = "ga";
     	    	if(doc.containsKey("Reputation"))
     	    		info.add((double)((ArrayList<Long>) doc.getFieldValue("Reputation")).get(0));
     	    	else
@@ -155,7 +157,8 @@ public class QuestionRanker
 				feats.add(0.0);
 
 			if(doc.getFieldValue("score")!=null)
-				feats.add(Double.parseDouble(post_fields.get("score")));
+				feats.add(0.0);
+//				feats.add(Double.parseDouble(post_fields.get("score")));
 			else
 				feats.add(0.0);
 			
@@ -338,7 +341,7 @@ public class QuestionRanker
 	{
 		GenerateQuery generate_query = new GenerateQuery();
 		HashMap<SolrDocument, ArrayList<SolrDocument>> training_data = QuestionRetreivalBaseline.querySolr(training_file, 100, solr, generate_query);
-		add_wmd_scores(training_data,"output_scores.txt","input_ids.txt");
+//		add_wmd_scores(training_data,"output_scores.txt","input_ids.txt");
 		HashMap<String, Set<String>> goldset = new HashMap<String, Set<String>>();
 		for (String line : Files.readAllLines(Paths.get(training_file))) {
 			String[] splits = line.trim().split("\t");
@@ -431,8 +434,8 @@ public class QuestionRanker
 	    	writer.println();
 		}
     	writer.close();
-    	
-		
+//    	
+//		
 		ArrayList<SolrDocument> queries = new ArrayList<SolrDocument>(); 
 		Map<String, SolrDocument> querymap = new HashMap<String, SolrDocument>();
 		
@@ -441,8 +444,8 @@ public class QuestionRanker
 			
 			querymap.put(((ArrayList)query.getFieldValue("Id")).get(0).toString(), query);
 		}
-    	Process p = Runtime.getRuntime().exec("python get_wmd_scores.py "+input_file+" ./dataset_sample/w2v_model.pk "+output_file);
-    	p.waitFor();
+//    	Process p = Runtime.getRuntime().exec("python get_wmd_scores.py "+input_file+" ./dataset_sample/w2v_model.pk "+output_file);
+//    	p.waitFor();
 		for (String line : Files.readAllLines(Paths.get(input_file))) {
 			queries.add(querymap.get(line.trim().split("\t")[0]));
 		}
@@ -452,7 +455,13 @@ public class QuestionRanker
     		
     		String[] scores = line.trim().split("\t");
     		ArrayList<SolrDocument> results = training_data.get(queries.get(i));
-    		for(int j=0;j<results.size();j++)
+    		if (results.size() != scores.length ) {
+    			System.out.println(queries.get(i));
+    			System.out.println(results.size() - scores.length);
+
+    		}
+    		int range = Math.min(results.size(), scores.length);
+    		for(int j=0;j<range;j++)
     		{
     			String[] result_scores = scores[j].split(",");
     			results.get(j).addField("wmd_score_1", result_scores[0]);
@@ -465,7 +474,7 @@ public class QuestionRanker
 
 	public HashMap<SolrDocument, ArrayList<SolrDocument>>rerank(HashMap<SolrDocument, ArrayList<SolrDocument>> predicted_results) throws Exception
 	{
-		add_wmd_scores(predicted_results,"output_scores_val.txt","input_ids_val.txt");
+//		add_wmd_scores(predicted_results,"output_scores_val.txt","input_ids_val.txt");
 		HashMap<SolrDocument, ArrayList<SolrDocument>> output = new HashMap<SolrDocument, ArrayList<SolrDocument>>();
 		for(SolrDocument query: predicted_results.keySet())
 		{

@@ -20,7 +20,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -34,13 +34,9 @@ public class TfidfTerms {
 	QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
 	static HashSet<String> stopwords = QuestionRetreivalBaseline.stopwords;
 	public static HashMap<String,ArrayList<String>> doc_attributes = new HashMap<String,ArrayList<String>>();
-	static SolrServer solr;
+	static HttpSolrClient solr;
 	void setup() {
-	    try {
-	    	solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
-	    } catch (MalformedURLException ex) {
-	        throw new RuntimeException(ex);
-	    }
+	    solr = new HttpSolrClient("http://localhost:8983/solr/travelstackexchange/");
 	}
 	
 	public static void main(String[] args) throws SolrServerException, IOException {
@@ -82,7 +78,7 @@ public class TfidfTerms {
 	}
 	
 	private static String[]  uniqueTokenList(String documentID, int n_gram) throws SolrServerException, IOException {
-		solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
+		solr = new HttpSolrClient("http://localhost:8983/solr/travelstackexchange/");
 		String query = String.format("Id:%s", documentID);
 		SolrQuery q = new SolrQuery(query);
 		q.setRows(1);  //one result; documentID should be unique.
@@ -128,7 +124,7 @@ public class TfidfTerms {
 		return tf_hashmap;
 	}
 	
-	private static HashMap<String,Double> get_idf_map(String[] token_list) throws SolrServerException {
+	private static HashMap<String,Double> get_idf_map(String[] token_list) throws SolrServerException, IOException {
 		SolrQuery q = new SolrQuery("*:*");
 	    q.setRows(0);  // don't actually request any data; just want numDocs
 	    long total_docs =  solr.query(q).getResults().getNumFound();		
@@ -139,7 +135,7 @@ public class TfidfTerms {
 	    return idf_map;
 	}
 
-	private static double get_idf(long total_docs, String term) throws SolrServerException {
+	private static double get_idf(long total_docs, String term) throws SolrServerException, IOException {
 		// http://localhost:8983/solr/tss/select/?&q=Antarctica&wt=json&start=0&rows=0&indent=on
 		String query = String.format("\"%s\"", term);
 		SolrQuery q = new SolrQuery(query);

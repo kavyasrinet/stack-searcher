@@ -15,7 +15,7 @@ import java.util.Map.Entry;
 
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -37,10 +37,10 @@ public class QuestionRetreivalBaseline {
 				
     	GenerateQuery generate_query = new GenerateQuery();
 
-		SolrServer solr = new CommonsHttpSolrServer("http://localhost:8983/solr/travelstackexchange/");
-
+    	HttpSolrClient solr = new HttpSolrClient("http://localhost:8983/solr/travelstackexchange/");
+		long time0 = System.currentTimeMillis();
 	  	QuestionRanker ranker = new QuestionRanker(solr);
-	  	ranker.train_model( "dataset_sample/train.txt");
+//	  	ranker.train_model( "dataset_sample/train.txt");
 
 
 		QuestionRetreivalBaseline qrb = new QuestionRetreivalBaseline();
@@ -57,23 +57,26 @@ public class QuestionRetreivalBaseline {
     	String query_file = "dataset_sample/val.txt";  	
     	HashMap<SolrDocument, ArrayList<SolrDocument>> docs = qrb.querySolr(query_file,500, solr, generate_query);
     	
-    	docs = ranker.rerank(docs);
+//    	docs = ranker.rerank(docs);
     	
     	
     	System.out.println("Evaluating\n");
     	HashMap<String, ArrayList<String>> predicted_results = retreivedIds(docs);
 
-    	long time = System.currentTimeMillis();
+    	
   
     	
     	Evaluate evaluator = new Evaluate(query_file);
-    	
+    	long time = System.currentTimeMillis();
     	System.out.println("mAP Score = " + evaluator.getMapScore(predicted_results));
     	System.out.println("mrr Score = " + evaluator.getMrrScore(predicted_results));
        	System.out.println("Recall Score = " + evaluator.getRecall(predicted_results));
     	System.out.println("P@1 Score = " + evaluator.getPAtK(predicted_results,1));
     	System.out.println("P@5 Score = " + evaluator.getPAtK(predicted_results,5));
-
+    	System.out.println("Timing = " + (time-time0));
+    	
+//    	System.out.println("Error Analysis");
+//    	evaluator.doErrorAnalysis(predicted_results);
     }
     
 	//call this function to get top k phrases from the checked in file
@@ -98,7 +101,7 @@ public class QuestionRetreivalBaseline {
  * sum over all tags(p logp), where p is the probability of a tag appearing in the fetched documents
  * 
  */	
-	public static double getEntropy(ArrayList<SolrDocument> docs, SolrServer solr) throws SolrServerException{
+	public static double getEntropy(ArrayList<SolrDocument> docs, HttpSolrClient solr) throws SolrServerException, IOException{
 		ArrayList<String> ids = new ArrayList<String>();    
 		for(SolrDocument doc : docs){
 			ArrayList<Long> id = (ArrayList<Long>)  doc.getFieldValue("Id");
@@ -144,7 +147,7 @@ public class QuestionRetreivalBaseline {
 /*
  * Get attributes of a post using the Solr Server and the ID of the post	
  */
-	public static HashMap<String, String>get_post(String postid,  SolrServer solr) throws SolrServerException
+	public static HashMap<String, String>get_post(String postid,  HttpSolrClient solr) throws SolrServerException, IOException
 	{	
 		ModifiableSolrParams params = new ModifiableSolrParams();
 	    params.set("qt", "/select");
@@ -166,7 +169,7 @@ public class QuestionRetreivalBaseline {
  * the query is then given to Solr to fetch results.
  * This is the query generation module.    
  */
-	private static  String generateQuery(String postId,SolrServer solr, GenerateQuery generate_query) throws IOException, SolrServerException
+	private static  String generateQuery(String postId,HttpSolrClient solr, GenerateQuery generate_query) throws IOException, SolrServerException
     {
     	String query = "";
     	HashMap<String, String> postAttb  = get_post(postId, solr);
@@ -209,7 +212,7 @@ public class QuestionRetreivalBaseline {
         //generate_query.appendBody(title, body)
   
 
-           query = title + " " + tags; 
+//           query = title + " " + tags; 
 
    //     query =write_Map.get(Integer.parseInt(question_id)) +" "+tags;
 //        query=generate_query.expand(title,false);
@@ -271,7 +274,7 @@ public class QuestionRetreivalBaseline {
      * and returns back a hashmap that has the document we are querying for and the list of documents returned for the query 
      * as a result.
      */
-    public static HashMap<SolrDocument, ArrayList<SolrDocument>> querySolr(String query_file, int resultSetSize, SolrServer solr, GenerateQuery generate_query) throws IOException, URISyntaxException, SolrServerException{
+    public static HashMap<SolrDocument, ArrayList<SolrDocument>> querySolr(String query_file, int resultSetSize, HttpSolrClient solr, GenerateQuery generate_query) throws IOException, URISyntaxException, SolrServerException{
         
        BufferedReader reader = new BufferedReader(new FileReader(new File(query_file)));
 
@@ -294,6 +297,7 @@ public class QuestionRetreivalBaseline {
     			
         		ArrayList<RetrievalResult> results = new ArrayList<>();
 	        	
+        		
 	        	String query = "PostTypeId=1 " + generateQuery(qid, solr, generate_query);
 	            ArrayList<SolrDocument> list = new ArrayList<SolrDocument>();
 	    	    params = new ModifiableSolrParams();
